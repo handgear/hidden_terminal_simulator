@@ -1,6 +1,11 @@
 import random
 import numpy as np
 import matplotlib.pyplot as plt
+class Setting:
+    MAX_ROUTER_NUM = 1500
+    MAX_ROUTER_RANGE = 100
+    router_num = 20
+    router_range = 3
 
 class Router:
     def __init__(self):
@@ -14,16 +19,18 @@ class Router:
     #     return self.result
 
 router1 = Router()
+setting = Setting()
+
 
 # router_num = 3 #get by user input (later)
 while True :
     router_num = input("input number of routers(1<x<1500): ");
     if router_num < 1500 and router_num > 1 :
         break
+#make router objects
+router_list = [Router() for i in range(setting.router_num)]
 
-router_list = [Router() for i in range(router_num)] #make router objects
 
-# plt.plot([1,2,3,4],'bo')
 plt.axis([0, 1000, 0, 1000])
 # plt.plot(router1.x, router1.y,'bo')
 for i in range(router_num) :
