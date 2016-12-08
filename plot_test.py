@@ -21,9 +21,16 @@ class Router:
         self.y = random.randrange(1, 1000)
         self.near_router = []
 
-    # def adder(self, num):
-    #     self.result += num
-    #     return self.result
+    def add_near_router_info(self, router_n):
+        coor1 = (self.x, self.y)
+        for i in range(setting.router_num):
+            if i is not router_n:#avoid adding self information
+                coor2 = (router_list[i].x, router_list[i].y)
+                line = Line(coor1, coor2)
+                # print line.distance() #for debug
+                if line.distance() < setting.router_range * 2 :
+                    #add router number and coordination which is placed in coor2
+                    self.near_router.append([i,router_list[i].x, router_list[i].y])
 
 class Line:
     def __init__(self, coor1, coor2):
@@ -50,23 +57,16 @@ setting = Setting()
 #make router objects
 router_list = [Router() for i in range(setting.router_num)]
 
-#search other routers in its range
-for j in range(setting.router_num):
-    coor1 = (router_list[j].x, router_list[j].y)
-    for i in range(setting.router_num):
-        if i is not j:#avoid adding self information
-            coor2 = (router_list[i].x, router_list[i].y)
-            line = Line(coor1, coor2)
-            # print line.distance() #for debug
-            if line.distance() < setting.router_range * 2 :
-                #add router number and coordination which is placed in coor2
-                router_list[j].near_router.append([i,router_list[i].x, router_list[i].y])
-
-
+#search other routers in its range and add to .near_router[]
 for i in range(setting.router_num):
+    router_list[i].add_near_router_info(i)
+
+
+for i in range(setting.router_num): #for debug
     print router_list[i].near_router
 
 
+#=========================drawing section==========================#
 #plot axis number
 plt.axis([0, 1000, 0, 1000])
 
