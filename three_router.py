@@ -1,64 +1,12 @@
+#-*- coding: utf-8 -*-
 import random
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Circle
 from matplotlib.lines import Line2D
-import math
+from routerlib import *
 
-
-class Setting:
-    MAX_ROUTER_NUM = 1500
-    MAX_ROUTER_RANGE = 100
-    total_router_num = 3
-    router_range = 300
-    K_limit = 4
-
-class Router:
-    def __init__(self):
-        #do it need to avoid router in same place?
-        #place router in random spot
-        self.x = random.randrange(1, 1000)
-        self.y = random.randrange(1, 1000)
-        self.near_router = []
-
-    def __init__(self, x, y):
-        #place router in position x,y
-        self.x = x
-        self.y = y
-        self.near_router = []
-        self.R = 0
-        self.K = 0
-        self.RTS = [] #[router number of DATA receiver , NAV]
-        self.CTS = [] #[router number of DATA sender , NAV]
-        self.ACK = [] #[router number]
-
-    def add_near_router_info(self, router_n):
-        coor1 = (self.x, self.y)
-        for i in range(setting.total_router_num):
-            if i is not router_n:#avoid adding self information
-                coor2 = (router_list[i].x, router_list[i].y)
-                line = Line(coor1, coor2)
-                # print line.distance() #for debug
-                if line.distance() < setting.router_range:
-                    #add router number and coordination which is placed in coor2
-                    self.near_router.append([i,router_list[i].x, router_list[i].y])
-
-class Line:
-    def __init__(self, coor1, coor2):
-        self.coor1 = coor1
-        self.coor2  = coor2
-
-    def distance(self):
-        x1, y1 = self.coor1
-        x2, y2 = self.coor2
-
-        return math.sqrt(math.pow((x2 - x1), 2) + math.pow((y2 - y1),2))
-
-class Supervisor:
-    def __init__(self, total_time_slot):
-        self.total_time_slot = total_time_slot
-        current_time_slot = 0
 
 
 
@@ -74,11 +22,22 @@ router_list.append(Router(700,500))
 
 #search other routers in its range and add to .near_router[]
 for i in range(setting.total_router_num):
-    router_list[i].add_near_router_info(i)
+    router_list[i].add_near_router_info(router_list, i)
 
 #for debug
 for i in range(setting.total_router_num):
     print router_list[i].near_router
+
+#set receiver
+#it will pick rand receiver later
+router_list[0].receiver.append([1,500,500])
+router_list[2].receiver.append([1,500,500])
+
+#===========loop for one frame=============#
+
+router_list[0].set_R
+router_list[2].set_R
+
 
 #가운데는 일단 듣는 역할, 양옆 두개가 전송하려고 하는 상황
 '''송신측
@@ -138,7 +97,6 @@ ax = plt.axes()
 ax.arrow(0, 0, 100, 100, head_width=20, head_length=20, width=5, fc='k', ec='k')
 
 plt.show()
-
 
 
 
