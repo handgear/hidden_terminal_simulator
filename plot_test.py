@@ -10,7 +10,7 @@ import math
 class Setting:
     MAX_ROUTER_NUM = 1500
     MAX_ROUTER_RANGE = 100
-    router_num = 200
+    total_router_num = 200
     router_range = 30
 
 class Router:
@@ -23,12 +23,12 @@ class Router:
 
     def add_near_router_info(self, router_n):
         coor1 = (self.x, self.y)
-        for i in range(setting.router_num):
+        for i in range(setting.total_router_num):
             if i is not router_n:#avoid adding self information
                 coor2 = (router_list[i].x, router_list[i].y)
                 line = Line(coor1, coor2)
                 # print line.distance() #for debug
-                if line.distance() < setting.router_range * 2 :
+                if line.distance() < setting.router_range:
                     #add router number and coordination which is placed in coor2
                     self.near_router.append([i,router_list[i].x, router_list[i].y])
 
@@ -47,22 +47,22 @@ setting = Setting()
 
 #get router number and router range
 # while True :
-#     setting.router_num = input("input number of routers(1<x<1500): ")
-#     if setting.router_num < setting.MAX_ROUTER_NUM and setting.router_num > 1 :
+#     setting.total_router_num = input("input number of routers(1<x<1500): ")
+#     if setting.total_router_num < setting.MAX_ROUTER_NUM and setting.total_router_num > 1 :
 #         setting.router_range = input("input covering range of each router(1<x<100): ")
 #         if setting.router_range < setting.MAX_ROUTER_RANGE and setting.router_range > 0:
 #             break
 
 
 #make router objects
-router_list = [Router() for i in range(setting.router_num)]
+router_list = [Router() for i in range(setting.total_router_num)]
 
 #search other routers in its range and add to .near_router[]
-for i in range(setting.router_num):
+for i in range(setting.total_router_num):
     router_list[i].add_near_router_info(i)
 
 
-for i in range(setting.router_num): #for debug
+for i in range(setting.total_router_num): #for debug
     print router_list[i].near_router
 
 
@@ -70,7 +70,7 @@ for i in range(setting.router_num): #for debug
 #plot axis number
 plt.axis([0, 1000, 0, 1000])
 
-for i in range(setting.router_num):
+for i in range(setting.total_router_num):
     #draw router
     plt.plot(router_list[i].x, router_list[i].y,'bo')
 
