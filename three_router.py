@@ -12,6 +12,7 @@ from routerlib import *
 
 #================================================================#
 setting = Setting()
+supervisor = Supervisor()
 
 
 #make router objects
@@ -21,11 +22,11 @@ router_list.append(Router(500,500))
 router_list.append(Router(700,500))
 
 #search other routers in its range and add to .near_router[]
-for i in range(setting.total_router_num):
+for i in range(setting.TOTAL_ROUTER_NUM):
     router_list[i].add_near_router_info(router_list, i)
 
 #for debug
-for i in range(setting.total_router_num):
+for i in range(setting.TOTAL_ROUTER_NUM):
     print router_list[i].near_router
 
 #set receiver
@@ -76,28 +77,66 @@ RTS신호가 2개 잡히면 충돌이므로 무시 =>near_router 의 RTS 상태�
 
 
 #=========================drawing section==========================#
-#plot axis number
+# plt_list = [plt.figure().add_subplot(111) for i in range(setting.TOTAL_TIME_SLOT)]
+
+for i in range(setting.TOTAL_TIME_SLOT):
+    # plot axis number
+    plt.axis([0, 1000, 0, 1000])
+    plt.xlabel('Time Slot = %d' %i , fontsize=18)
+
+    for j in range(setting.TOTAL_ROUTER_NUM):
+        #draw router
+        plt.plot(router_list[j].x, router_list[j].y,'bo')
+
+        #draw range of routers
+        #color conflicting router range as red
+        if len(router_list[j].near_router) is not 0:
+            circle = plt.Circle((router_list[j].x, router_list[j].y), radius=setting.ROUTER_RANGE, alpha=0.3, fc='red')
+            plt.gca().add_patch(circle)
+        else:
+            circle = plt.Circle((router_list[j].x, router_list[j].y), radius=setting.ROUTER_RANGE, alpha=0.3, fc='blue')
+            plt.gca().add_patch(circle)
+
+    #draw arrow
+    plt.arrow(0, 0, 100, 100, head_width=20, head_length=20, width=5, fc='k', ec='k')
+
+    plt.savefig('./output/test%d.png' % i)
+
+    # plt.show()
+    plt.gcf().clear()
+
+
+
+'''
+# plot axis number
 plt.axis([0, 1000, 0, 1000])
 
-for i in range(setting.total_router_num):
+for i in range(setting.TOTAL_ROUTER_NUM):
     #draw router
     plt.plot(router_list[i].x, router_list[i].y,'bo')
 
     #draw range of routers
     #color conflicting router range as red
     if len(router_list[i].near_router) is not 0:
-        circle = plt.Circle((router_list[i].x, router_list[i].y), radius=setting.router_range, alpha=0.3, fc='red')
+        circle = plt.Circle((router_list[i].x, router_list[i].y), radius=setting.ROUTER_RANGE, alpha=0.3, fc='red')
         plt.gca().add_patch(circle)
     else:
-        circle = plt.Circle((router_list[i].x, router_list[i].y), radius=setting.router_range, alpha=0.3, fc='blue')
+        circle = plt.Circle((router_list[i].x, router_list[i].y), radius=setting.ROUTER_RANGE, alpha=0.3, fc='blue')
         plt.gca().add_patch(circle)
 
 
-ax = plt.axes()
-ax.arrow(0, 0, 100, 100, head_width=20, head_length=20, width=5, fc='k', ec='k')
+plt.arrow(0, 0, 100, 100, head_width=20, head_length=20, width=5, fc='k', ec='k')
+plt.savefig('./output/test.png')
 
-plt.show()
+fig1 = plt.figure()
+ax1 = fig1.add_subplot(111)
+ax1.axis([0, 1000, 0, 1000])
+
+ax1.arrow(0, 0, 100, 100, head_width=20, head_length=20, width=5, fc='k', ec='k')
 
 
+plt.savefig('test1.png')
+'''
+# plt.show()
 
 
