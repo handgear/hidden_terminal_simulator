@@ -77,7 +77,6 @@ RTS신호가 2개 잡히면 충돌이므로 무시 =>near_router 의 RTS 상태�
 
 
 #=========================drawing section==========================#
-# plt_list = [plt.figure().add_subplot(111) for i in range(setting.TOTAL_TIME_SLOT)]
 
 for i in range(setting.TOTAL_TIME_SLOT):
     # plot axis number
@@ -87,6 +86,8 @@ for i in range(setting.TOTAL_TIME_SLOT):
     for j in range(setting.TOTAL_ROUTER_NUM):
         #draw router
         plt.plot(router_list[j].x, router_list[j].y,'bo')
+
+        if
 
         #draw range of routers
         #color conflicting router range as red
@@ -100,43 +101,10 @@ for i in range(setting.TOTAL_TIME_SLOT):
     #draw arrow
     plt.arrow(0, 0, 100, 100, head_width=20, head_length=20, width=5, fc='k', ec='k')
 
-    plt.savefig('./output/test%d.png' % i)
 
-    # plt.show()
+    # plt.savefig('./output/test%d.png' % i)
+    plt.show()
     plt.gcf().clear()
 
-
-
-'''
-# plot axis number
-plt.axis([0, 1000, 0, 1000])
-
-for i in range(setting.TOTAL_ROUTER_NUM):
-    #draw router
-    plt.plot(router_list[i].x, router_list[i].y,'bo')
-
-    #draw range of routers
-    #color conflicting router range as red
-    if len(router_list[i].near_router) is not 0:
-        circle = plt.Circle((router_list[i].x, router_list[i].y), radius=setting.ROUTER_RANGE, alpha=0.3, fc='red')
-        plt.gca().add_patch(circle)
-    else:
-        circle = plt.Circle((router_list[i].x, router_list[i].y), radius=setting.ROUTER_RANGE, alpha=0.3, fc='blue')
-        plt.gca().add_patch(circle)
-
-
-plt.arrow(0, 0, 100, 100, head_width=20, head_length=20, width=5, fc='k', ec='k')
-plt.savefig('./output/test.png')
-
-fig1 = plt.figure()
-ax1 = fig1.add_subplot(111)
-ax1.axis([0, 1000, 0, 1000])
-
-ax1.arrow(0, 0, 100, 100, head_width=20, head_length=20, width=5, fc='k', ec='k')
-
-
-plt.savefig('test1.png')
-'''
-# plt.show()
 
 
