@@ -1,4 +1,5 @@
 import math
+from math import atan2, degrees, pi
 import random
 
 class Line:
@@ -12,13 +13,21 @@ class Line:
 
         return math.sqrt(math.pow((x2 - x1), 2) + math.pow((y2 - y1),2))
 
+    def angle(self):
+        x1, y1 = self.coor1
+        x2, y2 = self.coor2
+        dx = x2 - x1
+        dy = y2 - y1
+        rads = atan2(dy,dx)
+        return degrees(rads)
+
 class Setting:
     MAX_ROUTER_NUM = 1500
     MAX_ROUTER_RANGE = 100
     TOTAL_ROUTER_NUM = 3
     ROUTER_RANGE = 300
     K_LIMIT = 4
-    TOTAL_TIME_SLOT = 3
+    TOTAL_TIME_SLOT = 1
 
 class Router:
     def __init__(self):
