@@ -15,9 +15,10 @@ class Line:
 class Setting:
     MAX_ROUTER_NUM = 1500
     MAX_ROUTER_RANGE = 100
-    total_router_num = 3
-    router_range = 300
-    K_limit = 4
+    TOTAL_ROUTER_NUM = 3
+    ROUTER_RANGE = 300
+    K_LIMIT = 4
+    TOTAL_TIME_SLOT = 3
 
 class Router:
     def __init__(self):
@@ -43,12 +44,12 @@ class Router:
     def add_near_router_info(self, router_list, router_num):
         setting = Setting()
         coor1 = (self.x, self.y)
-        for i in range(setting.total_router_num):
+        for i in range(setting.TOTAL_ROUTER_NUM):
             if i is not router_num:#avoid adding self information
                 coor2 = (router_list[i].x, router_list[i].y)
                 line = Line(coor1, coor2)
                 # print line.distance() #for debug
-                if line.distance() < setting.router_range:
+                if line.distance() < setting.ROUTER_RANGE:
                     #add router number and coordination which is placed in coor2
                     self.near_router.append([i,router_list[i].x, router_list[i].y])
 
@@ -57,7 +58,7 @@ class Router:
             temp = random.randrange(0, len(self.near_router))
             self.receiver.append(self.near_router[temp])
 
-    def set_R():
+    def set_R(self):
         #set R with random number between 0 and 2^K-1
         self.R = random.randrange(0,math.pow(2,self.K))
 
@@ -66,7 +67,6 @@ class Router:
 
 
 class Supervisor:
-    def __init__(self, total_time_slot):
-        self.total_time_slot = total_time_slot
-        current_time_slot = 0
+    def __init__(self):
+        self.current_time_slot = 0
 
