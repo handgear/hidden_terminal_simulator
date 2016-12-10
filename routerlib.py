@@ -90,7 +90,7 @@ class Router:
         self.time_out = {'CTS': 5, 'ACK': 5}
 
     def initialize_receiver(self):
-        self.state = ''
+        self.state = 'WAIT'
         self.ctrl_data = {'RTS': -1, 'CTS': -1, 'DATA': 0, 'ACK': -1}
         self.receiver = []
         self.time_to_send = {'RTS': -1, 'CTS': -1, 'DATA': -1, 'ACK': -1}
