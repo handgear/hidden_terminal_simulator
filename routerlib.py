@@ -28,6 +28,7 @@ class Setting:
     ROUTER_RANGE = 300
     K_LIMIT = 4
     TOTAL_TIME_SLOT = 1
+    DATA_LENGTH = 2
 
 class Router:
     def __init__(self):
@@ -100,4 +101,7 @@ class Router:
 class Supervisor:
     def __init__(self):
         self.current_time_slot = 0
+        # self.divided_time_slot = 0 #divide one time slot to two(0/1)
+        # #0 for setting flags and data
+        # #1 for setting time
 
