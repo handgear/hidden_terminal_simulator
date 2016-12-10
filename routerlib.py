@@ -53,7 +53,7 @@ class Router:
 
         self.receiver = [] #when this router is sender, save info
         self.sender = [] #when this router is receiver, save info
-        self.time_to_send = {'RTS': -1, 'CTS': -1, 'DATA': -1, 'ACK': -1} #number of timeslot to send message
+        self.time_to_send = {'RTS': 0, 'CTS': -1, 'DATA': -1, 'ACK': -1} #number of timeslot to send message
         self.time_out = {'CTS': 5, 'ACK': 5}
 
     def add_near_router_info(self, router_list, router_num):
@@ -77,7 +77,7 @@ class Router:
         #set R with random number between 0 and 2^K-1
         self.backoff_data['R'] = random.randrange(0,math.pow(2,self.K))
 
-    def set_RST_time(self):
+    def set_RTS_time(self):
         supervisor = Supervisor()
         self.time_to_send['RTS'] = supervisor.current_time_slot + self.backoff_data['R']
 
@@ -86,14 +86,14 @@ class Router:
         self.ctrl_data = {'RTS': -1, 'CTS': -1, 'DATA': 0, 'ACK': -1}
         self.backoff_data = {'R': 0, 'K': 0}
         self.sender = []
-        self.time_to_send = {'RTS': -1, 'CTS': -1, 'DATA': -1, 'ACK': -1}
+        self.time_to_send = {'RTS': 0, 'CTS': 0, 'DATA': -1, 'ACK': -1}
         self.time_out = {'CTS': 5, 'ACK': 5}
 
     def initialize_receiver(self):
         self.state = 'WAIT'
         self.ctrl_data = {'RTS': -1, 'CTS': -1, 'DATA': 0, 'ACK': -1}
         self.receiver = []
-        self.time_to_send = {'RTS': -1, 'CTS': -1, 'DATA': -1, 'ACK': -1}
+        self.time_to_send = {'RTS': 0, 'CTS': 0, 'DATA': -1, 'ACK': -1}
         self.time_out = {'CTS': 5, 'ACK': 5}
 
 
