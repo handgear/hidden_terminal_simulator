@@ -42,13 +42,19 @@ class Router:
         self.x = x
         self.y = y
         self.near_router = []
-        self.R = 0
-        self.K = 0
-        self.RTS = [] #[router number of DATA receiver , NAV]
-        self.CTS = [] #[router number of DATA sender , NAV]
-        self.ACK = [] #[router number]
+        self.state = '' #state info for display
+        #'RTS', 'CTS', 'DATA', 'ACK', 'WAIT'
+        self.ctrl_data = {'RTS': -1, 'CTS': -1, 'DATA': 0, 'ACK': -1}
+        #RTS = router number of DATA receiver
+        #CTS = router number of DATA sender
+        #DATA = datanumber to send (60~0)
+        #ACK = router number of DATA sender
+        self.backoff_data = {'R': 0, 'K': 0}
+
         self.receiver = [] #when this router is sender, save info
         self.sender = [] #when this router is receiver, save info
+        self.time_to_send = {'RTS': -1, 'CTS': -1, 'DATA': -1, 'ACK': -1} #number of timeslot to send message
+        self.time_out = {'CTS': 5, 'ACK': 5}
 
     def add_near_router_info(self, router_list, router_num):
         setting = Setting()
@@ -69,10 +75,26 @@ class Router:
 
     def set_R(self):
         #set R with random number between 0 and 2^K-1
-        self.R = random.randrange(0,math.pow(2,self.K))
+        self.backoff_data['R'] = random.randrange(0,math.pow(2,self.K))
 
+    def set_RST_time(self):
+        supervisor = Supervisor()
+        self.time_to_send['RTS'] = supervisor.current_time_slot + self.backoff_data['R']
 
+    def initialize_sender(self):
+        self.state = ''
+        self.ctrl_data = {'RTS': -1, 'CTS': -1, 'DATA': 0, 'ACK': -1}
+        self.backoff_data = {'R': 0, 'K': 0}
+        self.sender = []
+        self.time_to_send = {'RTS': -1, 'CTS': -1, 'DATA': -1, 'ACK': -1}
+        self.time_out = {'CTS': 5, 'ACK': 5}
 
+    def initialize_receiver(self):
+        self.state = ''
+        self.ctrl_data = {'RTS': -1, 'CTS': -1, 'DATA': 0, 'ACK': -1}
+        self.receiver = []
+        self.time_to_send = {'RTS': -1, 'CTS': -1, 'DATA': -1, 'ACK': -1}
+        self.time_out = {'CTS': 5, 'ACK': 5}
 
 
 class Supervisor:

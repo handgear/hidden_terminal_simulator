@@ -39,6 +39,74 @@ router_list[2].receiver.append([1,500,500])
 router_list[0].set_R
 router_list[2].set_R
 
+router_list[0].set_RST_time
+router_list[2].set_RST_time
+
+
+#현재 받는 대상은 1번 라우터로 설정, 추후에는 인접한 라우터 중 무작위로 선정
+#RTS를 보낸다
+if supervisor.current_time_slot == router_list[0].time_to_send['RTS']:
+    router_list[0].ctrl_data['RST'] = 1 #router number
+    router_list[0].state = 'RTS'
+
+#CTS 받은 경우, 데이터 전송 시기를 지정해준다
+if router_list[0].time_out['CTS'] is not 0 and \
+router_list[1].ctrl_data['CTS'] == 0:
+    #receiver router number, [0] for router number, ==0 for sender router number:
+    router_list[0].time_to_send['DATA'] = supervisor.current_time_slot + 1
+    router_list[0].ctrl_data['DATA'] = 60 #set data to send
+    router_list[0].state = 'CTS'
+#CTS 받지 못한 경우
+elif router_list[0].time_out['CTS'] is not 0 and \
+    router_list[1].ctrl_data['CTS'] == -1:
+        #timeout 1줄인다
+    router_list[0].time_out['CTS'] = router_list[0].time_out['CTS'] - 1
+    router_list[0].state = 'WAIT_CTS'
+#CTS time out, K=K+1
+elif router_list[0].time_out['CTS'] == 0:
+    router_list[0].backoff_data['K'] = router_list[0].backoff_data['K'] + 1
+    router_list[0].state = 'WAIT'
+
+#데이터 전송 60time slot동안 진행
+if router_list[0].ctrl_data['DATA'] is not 0 and \
+router_list[0].time_to_send['DATA'] <= supervisor.current_time_slot:
+    router_list[0].ctrl_data['DATA'] = router_list[0].ctrl_data['DATA'] - 1
+    router_list[0].state = 'DATA'
+
+#데이터 전송 완료된 경우 ACK 시간 세팅 (receiver쪽에서 세팅)
+
+    # router_list[0].ctrl_data['ACK'] = 0
+
+#ACK 보냄 (receiver)
+
+#ACK 받은 경우
+if router_list[0].time_out['ACK'] is not 0 and \
+router_list[1].ctrl_data['ACK'] == 0:
+    router_list[0].initialize_sender
+    router_list[1].initialize_receiver
+    router_list[0].state = 'ACK'
+#ACK 받지 못한 경우
+elif router_list[0].time_out['ACK'] is not 0 and \
+router_list[1].ctrl_data['ACK'] == -1:
+    router_list[0].state = 'WAIT_ACK'
+#ACK time out, K=K+1
+elif router_list[0].time_out['ACK'] == 0:
+    router_list[0].backoff_data['K'] = router_list[0].backoff_data['K'] + 1
+    router_list[0].state = 'WAIT'
+
+
+
+#======================================#
+
+
+if state == 'WAIT': R 1씩 줄이기
+if state == 'WAIT_CTS': time_out['CTS'] --
+if state == 'WAIT_ACK': time_out['ACK'] --
+
+
+
+
+current_time_slot ++
 
 #가운데는 일단 듣는 역할, 양옆 두개가 전송하려고 하는 상황
 '''송신측
@@ -69,7 +137,7 @@ RTS신호가 2개 잡히면 충돌이므로 무시 =>near_router 의 RTS 상태�
 #RTS, CTS, DATA, ACK 모두 다른 색깔 화살표로 표시하기
 #캡션 달기(화살표 안에 적어도 되고) //방법 알아보기
 
-
+#전송이 끝나면 머든 데이터 초기화 하기
 
 
 
@@ -87,7 +155,7 @@ for i in range(setting.TOTAL_TIME_SLOT):
         #draw router
         plt.plot(router_list[j].x, router_list[j].y,'bo')
 
-        if
+
 
         #draw range of routers
         #color conflicting router range as red
