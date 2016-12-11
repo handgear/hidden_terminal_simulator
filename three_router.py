@@ -35,15 +35,24 @@ for i in range(setting.TOTAL_ROUTER_NUM):
 # router_list[2].receiver = 1
 
 #===========loop for one frame=============#
-for timeslot in range(6): #can be change current_time_slot to using this
+for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot to using this
 
     router_list[0].set_R
     router_list[2].set_R
 
-    if router_list[0].state == '':
-        router_list[0].set_RTS_time
-        router_list[2].set_RTS_time
+    #reset router
+    for i in range(setting.TOTAL_ROUTER_NUM):
+        if router_list[i].reset == 1:
+            router_list[i].initialize_sender()
+        elif router_list[i].reset == 2:
+            router_list[i].initialize_receiver()
 
+    if router_list[0].state == '':
+        router_list[0].set_RTS_time(supervisor.current_time_slot)
+        router_list[2].set_RTS_time(supervisor.current_time_slot)
+        print 'current time: ' + str(supervisor.current_time_slot)
+        print 'rts time: ' + str(router_list[0].time_to_send['RTS'])
+        print 'backoff time R: ' + str(router_list[0].backoff_data['R'])
     for divided_time in range(2):
         #=================sender router=============#
         #현재 받는 대상은 1번 라우터로 설정, 추후에는 인접한 라우터 중 무작위로 선정
@@ -84,21 +93,21 @@ for timeslot in range(6): #can be change current_time_slot to using this
             if router_list[0].time_to_send['DATA'] <= supervisor.current_time_slot and \
             router_list[0].time_to_send['DATA'] is not -1:
                 #데이터 전송 60time slot동안 진행
-                if router_list[1].ctrl_data['DATA'] <= setting.DATA_LENGTH:
+                if supervisor.current_time_slot < router_list[1].time_to_end['DATA']:
                     router_list[1].ctrl_data['DATA'] = router_list[1].ctrl_data['DATA'] + 1
                     router_list[0].state = 'DATA'
-                    print router_list[1].ctrl_data['DATA']
+                    print 'from router send data num: ' + str(router_list[1].ctrl_data['DATA'])
 
         if divided_time == 1 and \
-        supervisor.current_time_slot > router_list[0].time_to_send['DATA'] + setting.DATA_LENGTH:
+        supervisor.current_time_slot == router_list[1].time_to_end['DATA']:
             #데이터를 다 보낸 경우에만 ACK 기다림
+            print '1_data_num: ' + str(router_list[1].ctrl_data['DATA'])
             if router_list[1].ctrl_data['DATA'] == setting.DATA_LENGTH:
                 #ACK 받은 경우
                 if router_list[0].time_out['ACK'] is not 0 and \
                 router_list[1].ctrl_data['ACK'] == 0:
-                    router_list[0].initialize_sender
-                    router_list[1].initialize_receiver
                     router_list[0].state = 'ACK'
+                    router_list[0].reset = 1 #reset sender
                 #ACK 받지 못한 경우
                 elif router_list[0].time_out['ACK'] is not 0 and \
                 router_list[1].ctrl_data['ACK'] == -1:
@@ -122,7 +131,7 @@ for timeslot in range(6): #can be change current_time_slot to using this
 
                 if len(count) == 1:
                     router_list[1].time_to_send['CTS'] = supervisor.current_time_slot + 1
-            print "time slot for cts: " +  str(router_list[1].time_to_send['CTS'])
+            # print "time slot for cts: " +  str(router_list[1].time_to_send['CTS'])
             #CTS보낼 time slot 이 되면 CTS 보냄
             if supervisor.current_time_slot == router_list[1].time_to_send['CTS']:
                 router_list[1].ctrl_data['CTS'] = 0
@@ -141,12 +150,13 @@ for timeslot in range(6): #can be change current_time_slot to using this
             #데이터 전송 완료된 경우 ACK 시간 세팅 (receiver쪽에서 세팅)
             if router_list[1].ctrl_data['DATA'] == setting.DATA_LENGTH:
                 router_list[1].time_to_send['ACK'] = supervisor.current_time_slot + 1
-                router_list[1].ctrl_data['DATA'] = 0 #reset
+                # router_list[1].ctrl_data['DATA'] = 0 #reset
 
         if divided_time == 0:
             #ACK를 보내야하는 time slot에 도달한 경우, ACK 보냄
             if router_list[1].time_to_send['ACK'] == supervisor.current_time_slot:
                 router_list[1].ctrl_data['ACK'] = 0 #ACK를 받을 라우터 번호 입력
+                router_list[1].reset = 2 #reset receiver
                 router_list[1].state = 'ACK'
 
     #======================================#
