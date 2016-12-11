@@ -31,8 +31,8 @@ for i in range(setting.TOTAL_ROUTER_NUM):
 
 #set receiver
 #it will pick rand receiver later
-router_list[0].receiver.append([1,500,500])
-router_list[2].receiver.append([1,500,500])
+# router_list[0].receiver = 1
+# router_list[2].receiver = 1
 
 #===========loop for one frame=============#
 for timeslot in range(6): #can be change current_time_slot to using this
@@ -64,12 +64,13 @@ for timeslot in range(6): #can be change current_time_slot to using this
                 router_list[1].ctrl_data['CTS'] == 0:
                     #receiver router number, [0] for router number, ==0 for sender router number:
                     router_list[0].time_to_send['DATA'] = supervisor.current_time_slot + 1
-                    router_list[0].receiver.append(1)
+                    router_list[1].time_to_end['DATA'] = supervisor.current_time_slot + setting.DATA_LENGTH + 1 #데이터 전송이 끝나는 시기를 입력해 놓는다
+                    router_list[0].receiver = 1
                     router_list[0].state = 'CTS'
                 #CTS 받지 못한 경우
                 elif router_list[0].time_out['CTS'] is not 0 and \
                 router_list[1].ctrl_data['CTS'] == -1 and \
-                len(router_list[0].receiver) == 0:
+                router_list[0].receiver == -1:
                         #timeout 1줄인다
                     router_list[0].time_out['CTS'] = router_list[0].time_out['CTS'] - 1
                     router_list[0].state = 'WAIT_CTS'
@@ -134,8 +135,8 @@ for timeslot in range(6): #can be change current_time_slot to using this
             #DATA 받는 중
             #데이터를 받을 때만 데이터 상테를 표시하도록 조건 정해야함...
             if router_list[1].ctrl_data['DATA'] is not 0 and \
-            router_list[1].ctrl_data['DATA'] < setting.DATA_LENGTH:
-                # router_list[1].state = 'DATA'
+            supervisor.current_time_slot < router_list[1].time_to_end['DATA']:
+                router_list[1].state = 'DATA'
                 print 'data receiving'
             #데이터 전송 완료된 경우 ACK 시간 세팅 (receiver쪽에서 세팅)
             if router_list[1].ctrl_data['DATA'] == setting.DATA_LENGTH:

@@ -52,10 +52,11 @@ class Router:
         #ACK = router number of DATA sender
         self.backoff_data = {'R': 0, 'K': 0}
 
-        self.receiver = [] #when this router is sender, save info
-        self.sender = [] #when this router is receiver, save info
+        self.receiver = -1 #when this router is sender, save info
+        self.sender = -1 #when this router is receiver, save info
         self.time_to_send = {'RTS': 0, 'CTS': -1, 'DATA': -1, 'ACK': -1} #number of timeslot to send message
         self.time_out = {'CTS': 5, 'ACK': 5}
+        self.time_to_end = {'DATA': -1, 'NAV': -1}
 
     def add_near_router_info(self, router_list, router_num):
         setting = Setting()
