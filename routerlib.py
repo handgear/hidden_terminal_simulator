@@ -27,7 +27,7 @@ class Setting:
     TOTAL_ROUTER_NUM = 3
     ROUTER_RANGE = 300
     K_LIMIT = 4
-    TOTAL_TIME_SLOT = 8
+    TOTAL_TIME_SLOT = 21
     DATA_LENGTH = 2
 
 class Router:
@@ -55,7 +55,7 @@ class Router:
         self.receiver = -1 #when this router is sender, save info
         self.sender = -1 #when this router is receiver, save info
         self.time_to_send = {'RTS': 0, 'CTS': -1, 'DATA': -1, 'ACK': -1} #number of timeslot to send message
-        self.time_out = {'CTS': 5, 'ACK': 5}
+        self.time_out = {'CTS': 2, 'ACK': 2}
         self.time_to_end = {'DATA': -1, 'NAV': -1}
         self.reset = 0 #flag 1 for sender reset, 2 for receiver reset
 
@@ -78,7 +78,7 @@ class Router:
 
     def set_R(self):
         #set R with random number between 0 and 2^K-1
-        self.backoff_data['R'] = random.randrange(0,math.pow(2,self.K))
+        self.backoff_data['R'] = random.randrange(0,math.pow(2,self.backoff_data['K']))
 
     def set_RTS_time(self, current_time_slot):
         self.time_to_send['RTS'] = current_time_slot + self.backoff_data['R']
@@ -87,18 +87,27 @@ class Router:
         self.state = ''
         self.ctrl_data = {'RTS': -1, 'CTS': -1, 'DATA': 0, 'ACK': -1}
         self.backoff_data = {'R': 0, 'K': 0}
-        self.sender = []
+        self.sender = -1
         self.time_to_send = {'RTS': 0, 'CTS': 0, 'DATA': -1, 'ACK': -1}
-        self.time_out = {'CTS': 5, 'ACK': 5}
+        self.time_out = {'CTS': 2, 'ACK': 2}
+        self.time_to_end = {'DATA': -1, 'NAV': -1}
+        self.reset = 0
+
+    def initialize_sender_without_RK(self):
+        self.state = ''
+        self.ctrl_data = {'RTS': -1, 'CTS': -1, 'DATA': 0, 'ACK': -1}
+        self.sender = -1
+        self.time_to_send = {'RTS': 0, 'CTS': 0, 'DATA': -1, 'ACK': -1}
+        self.time_out = {'CTS': 2, 'ACK': 2}
         self.time_to_end = {'DATA': -1, 'NAV': -1}
         self.reset = 0
 
     def initialize_receiver(self):
         self.state = 'WAIT'
         self.ctrl_data = {'RTS': -1, 'CTS': -1, 'DATA': 0, 'ACK': -1}
-        self.receiver = []
+        self.receiver = -1
         self.time_to_send = {'RTS': 0, 'CTS': 0, 'DATA': -1, 'ACK': -1}
-        self.time_out = {'CTS': 5, 'ACK': 5}
+        self.time_out = {'CTS': 2, 'ACK': 2}
         self.time_to_end = {'DATA': -1, 'NAV': -1}
         self.reset = 0
 
