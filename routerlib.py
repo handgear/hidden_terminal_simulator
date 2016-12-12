@@ -27,7 +27,7 @@ class Setting:
     TOTAL_ROUTER_NUM = 3
     ROUTER_RANGE = 300
     K_LIMIT = 4
-    TOTAL_TIME_SLOT = 21
+    TOTAL_TIME_SLOT = 8
     DATA_LENGTH = 2
 
 class Router:
@@ -58,6 +58,7 @@ class Router:
         self.time_out = {'CTS': 2, 'ACK': 2}
         self.time_to_end = {'DATA': -1, 'NAV': -1}
         self.reset = 0 #flag 1 for sender reset, 2 for receiver reset
+        self.sender_list = []
 
     def add_near_router_info(self, router_list, router_num):
         setting = Setting()
@@ -88,28 +89,31 @@ class Router:
         self.ctrl_data = {'RTS': -1, 'CTS': -1, 'DATA': 0, 'ACK': -1}
         self.backoff_data = {'R': 0, 'K': 0}
         self.sender = -1
-        self.time_to_send = {'RTS': 0, 'CTS': 0, 'DATA': -1, 'ACK': -1}
+        self.time_to_send = {'RTS': 0, 'CTS': -1, 'DATA': -1, 'ACK': -1}
         self.time_out = {'CTS': 2, 'ACK': 2}
         self.time_to_end = {'DATA': -1, 'NAV': -1}
         self.reset = 0
+
 
     def initialize_sender_without_RK(self):
         self.state = ''
         self.ctrl_data = {'RTS': -1, 'CTS': -1, 'DATA': 0, 'ACK': -1}
         self.sender = -1
-        self.time_to_send = {'RTS': 0, 'CTS': 0, 'DATA': -1, 'ACK': -1}
+        self.time_to_send = {'RTS': 0, 'CTS': -1, 'DATA': -1, 'ACK': -1}
         self.time_out = {'CTS': 2, 'ACK': 2}
         self.time_to_end = {'DATA': -1, 'NAV': -1}
         self.reset = 0
 
+
     def initialize_receiver(self):
-        self.state = 'WAIT'
+        self.state = ''
         self.ctrl_data = {'RTS': -1, 'CTS': -1, 'DATA': 0, 'ACK': -1}
         self.receiver = -1
-        self.time_to_send = {'RTS': 0, 'CTS': 0, 'DATA': -1, 'ACK': -1}
+        self.time_to_send = {'RTS': 0, 'CTS': -1, 'DATA': -1, 'ACK': -1}
         self.time_out = {'CTS': 2, 'ACK': 2}
         self.time_to_end = {'DATA': -1, 'NAV': -1}
         self.reset = 0
+        self.sender_list = []
 
 
 class Supervisor:
