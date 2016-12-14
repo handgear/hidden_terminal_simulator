@@ -27,7 +27,7 @@ class Setting:
     TOTAL_ROUTER_NUM = 3
     ROUTER_RANGE = 300
     K_LIMIT = 4
-    TOTAL_TIME_SLOT = 8
+    TOTAL_TIME_SLOT = 40
     DATA_LENGTH = 2
 
 class Router:
