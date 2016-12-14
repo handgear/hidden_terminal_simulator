@@ -94,7 +94,6 @@ class Router:
         self.time_to_end = {'DATA': -1, 'NAV': -1}
         self.reset = 0
 
-
     def initialize_sender_without_RK(self):
         self.state = ''
         self.ctrl_data = {'RTS': -1, 'CTS': -1, 'DATA': 0, 'ACK': -1}
@@ -103,7 +102,6 @@ class Router:
         self.time_out = {'CTS': 2, 'ACK': 2}
         self.time_to_end = {'DATA': -1, 'NAV': -1}
         self.reset = 0
-
 
     def initialize_receiver(self):
         self.state = ''
@@ -115,6 +113,17 @@ class Router:
         self.reset = 0
         self.sender_list = []
 
+    def is_channal_idle(self, router_list):
+        near_router_sending = 0
+        for i in range(len(self.near_router)):
+                num = self.near_router[i][0] #router number
+                if router_list[num].state is not '' or router_list[num].state is not 'WAIT':
+                    near_router_sending = near_router_sending  + 1
+
+        if near_router_sending == 0:
+            return True
+        else:
+            return False
 
 class Supervisor:
     def __init__(self):

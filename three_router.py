@@ -204,7 +204,8 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
     #only do once in each time slot
     for i in range(setting.TOTAL_ROUTER_NUM):
         #기다리고 있는 동안 R 1씩 줄이기
-        if router_list[i].state == '' and router_list[i].backoff_data['R'] is not 0:
+        if router_list[i].state == '' and router_list[i].backoff_data['R'] is not 0 and \
+        router_list[i].is_channal_idle(router_list):
             router_list[i].backoff_data['R'] = router_list[i].backoff_data['R'] -1
         #CTS 기다리고 있는 동안 time_out['CTS'] 1씩 줄이기
         if router_list[i].state == 'WAIT_CTS':
