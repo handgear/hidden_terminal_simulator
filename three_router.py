@@ -80,7 +80,7 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
             if i == 0:
                 router_list[i].receiver = 1
             elif i == 1:
-                router_list[i].receiver = 2
+                router_list[i].receiver = random.choice([0, 2])
             elif i == 2:
                 router_list[i].receiver = 1
 
@@ -226,7 +226,7 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
         logging.info("is it idle?: "+str(router_list[i].is_channal_idle(router_list)))
         #기다리고 있는 동안 R 1씩 줄이기
         if router_list[i].state == '' and router_list[i].backoff_data['R'] is not 0 and \
-        router_list[i].is_channal_idle(router_list):
+        router_list[i].is_channal_idle(router_list) == True:
             router_list[i].backoff_data['R'] = router_list[i].backoff_data['R'] -1
         #CTS 기다리고 있는 동안 time_out['CTS'] 1씩 줄이기
         if router_list[i].state == 'WAIT_CTS':

@@ -131,11 +131,13 @@ class Router:
 
     def is_channal_idle(self, router_list):
         near_router_sending = 0
-        for i in range(len(self.near_router)):
-                num = self.near_router[i][0] #router number
-                if router_list[num].state is not '' or router_list[num].state is not 'WAIT':
-                    near_router_sending = near_router_sending  + 1
-
+        for j in range(len(self.near_router)):
+                num = self.near_router[j][0] #router number
+                # print "num: " + str(num)
+                # print "router_list[num].state: " + str(router_list[num].state)
+                if router_list[num].state == 'RTS' or router_list[num].state == 'CTS' or router_list[num].state == 'ACK':
+                    near_router_sending = near_router_sending + 1
+        # print "near_router_sending: " + str(near_router_sending)
         if near_router_sending == 0:
             return True
         else:
