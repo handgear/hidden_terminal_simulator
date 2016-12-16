@@ -71,8 +71,12 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
         #현재 받는 대상은 1번 라우터로 설정, 추후에는 인접한 라우터 중 무작위로 선정
     #sender
     for i in range(setting.TOTAL_ROUTER_NUM):
+        #NAV 에 따른 RTS송신 지연
+        # if router_list[i].NAV is not 0:
+        #     router_list[i].time_to_send['RTS'] = router_list[i].time_to_send['RTS'] + 1
         #정해진 시간이 되면 RTS를 보낸다
-        if supervisor.current_time_slot == router_list[i].time_to_send['RTS']:
+        # if supervisor.current_time_slot == router_list[i].time_to_send['RTS']:
+        if router_list[i].backoff_data['R'] == 0 and router_list[i].state == '':
             if i == 0:
                 router_list[i].receiver = 1
             elif i == 1:
@@ -116,6 +120,7 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
                     logging.debug('rts router from 0: ' + str(router_list[0].ctrl_data['RTS']))
                     logging.debug('rts router from 1: ' + str(router_list[1].ctrl_data['RTS']))
                     logging.debug('rts router from 2: ' + str(router_list[2].ctrl_data['RTS']))
+            #set time to send CTS
             if len(router_list[i].sender_list) == 1 and router_list[i].time_to_send['CTS'] == -1:
                 router_list[i].time_to_send['CTS'] = supervisor.current_time_slot + 1
                 router_list[i].state = 'WAIT' # for timming problem
@@ -127,6 +132,12 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
             router_list[i].ctrl_data['CTS'] = router_list[i].sender_list[0]
             router_list[i].state = 'CTS'
             logging.debug("sender router num for cts: " +  str(router_list[i].ctrl_data['CTS']))
+
+            #send NAV to other routers
+            for router_num in range(len(router_list[i].near_router)):
+                if router_num is not router_list[i].sender_list[0]: #only send NAV to other routers
+                    router_list[router_num].NAV = setting.DATA_LENGTH + 2
+
         #CTS 전송 완료된 경우 flag 내려줌
         elif supervisor.current_time_slot > router_list[i].time_to_send['CTS']:
             router_list[i].ctrl_data['CTS'] = -1
@@ -170,7 +181,7 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
     for i in range(setting.TOTAL_ROUTER_NUM):
         if supervisor.current_time_slot == router_list[router_list[i].receiver].time_to_end['DATA']:
             #데이터를 다 보낸 경우에만 ACK 기다림
-            logging.debug('1_data_num: ' + str(router_list[router_list[i].receiver].ctrl_data['DATA']))
+            # logging.debug('1_data_num: ' + str(router_list[router_list[i].receiver].ctrl_data['DATA']))
             if router_list[router_list[i].receiver].ctrl_data['DATA'] == setting.DATA_LENGTH:
                 #ACK 받은 경우
                 if router_list[i].time_out['ACK'] is not 0 and \
@@ -203,9 +214,16 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
     #======================================#
     #before time slot change (only divided time change)
     #======================================#
+    logging.info("NAV 0: "+str(router_list[0].NAV))
+    logging.info("NAV 1: "+str(router_list[1].NAV))
+    logging.info("NAV 2: "+str(router_list[2].NAV))
 
     #only do once in each time slot
     for i in range(setting.TOTAL_ROUTER_NUM):
+        #debug
+        logging.info("i: "+str(i)+ "||state: " + str(router_list[i].state))
+        logging.info("backoff R: "+str(router_list[i].backoff_data['R']))
+        logging.info("is it idle?: "+str(router_list[i].is_channal_idle(router_list)))
         #기다리고 있는 동안 R 1씩 줄이기
         if router_list[i].state == '' and router_list[i].backoff_data['R'] is not 0 and \
         router_list[i].is_channal_idle(router_list):
@@ -216,7 +234,9 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
         #ACK 기다리고 있는 동안 time_out['ACK'] 1씩 줄이기
         if router_list[i].state == 'WAIT_ACK':
             router_list[i].time_out['ACK'] =  router_list[i].time_out['ACK'] - 1
-
+        #NAV timer 줄이기
+        if router_list[i].NAV is not 0:
+            router_list[i].NAV = router_list[i].NAV - 1
     #move time slot to next time slot
     supervisor.current_time_slot = supervisor.current_time_slot + 1
 
@@ -231,6 +251,8 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
     logging.debug('timeout0: ' + str(router_list[1].time_out['CTS']))
     logging.info("router_list[2].state: " + router_list[2].state)
     logging.debug('timeout0: ' + str(router_list[2].time_out['CTS']))
+
+
     # print router_list[1].near_router[0][0]
     # print router_list[1].near_router[1][0]
     logging.info('====================================')

@@ -27,7 +27,7 @@ class Setting:
     TOTAL_ROUTER_NUM = 3
     ROUTER_RANGE = 300
     K_LIMIT = 4
-    TOTAL_TIME_SLOT = 40
+    TOTAL_TIME_SLOT = 30
     DATA_LENGTH = 2
 
 class Router:
@@ -45,7 +45,6 @@ class Router:
     #     #DATA = datanumber to send (60~0)
     #     #ACK = router number of DATA sender
     #     self.backoff_data = {'R': 0, 'K': 0}
-
     #     self.receiver = -1 #when this router is sender, save info
     #     self.sender = -1 #when this router is receiver, save info
     #     self.time_to_send = {'RTS': 0, 'CTS': -1, 'DATA': -1, 'ACK': -1} #number of timeslot to send message
@@ -67,12 +66,12 @@ class Router:
         #DATA = datanumber to send (60~0)
         #ACK = router number of DATA sender
         self.backoff_data = {'R': 0, 'K': 0}
-
         self.receiver = -1 #when this router is sender, save info
         self.sender = -1 #when this router is receiver, save info
         self.time_to_send = {'RTS': 0, 'CTS': -1, 'DATA': -1, 'ACK': -1} #number of timeslot to send message
         self.time_out = {'CTS': 2, 'ACK': 2}
-        self.time_to_end = {'DATA': -1, 'NAV': -1}
+        self.time_to_end = {'DATA': -1}
+        self.NAV = 0
         self.reset = 0 #flag 1 for sender reset, 2 for receiver reset
         self.sender_list = []
 
@@ -109,6 +108,7 @@ class Router:
         self.time_out = {'CTS': 2, 'ACK': 2}
         self.time_to_end = {'DATA': -1, 'NAV': -1}
         self.reset = 0
+        self.NAV = 0
 
     def initialize_sender_without_RK(self):
         self.state = ''
@@ -144,7 +144,5 @@ class Router:
 class Supervisor:
     def __init__(self):
         self.current_time_slot = 0
-        # self.divided_time_slot = 0 #divide one time slot to two(0/1)
-        # #0 for setting flags and data
-        # #1 for setting time
+        self.transfer_success = 0.0
 
