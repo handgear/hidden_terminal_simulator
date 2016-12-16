@@ -44,6 +44,7 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
     #reset router
     for i in range(setting.TOTAL_ROUTER_NUM):
         if router_list[i].reset == 1:
+            supervisor.transfer_success = supervisor.transfer_success + 1
             router_list[i].initialize_sender()
             router_list[i].set_RTS_time(supervisor.current_time_slot)
         elif router_list[i].reset == 2:
@@ -294,6 +295,9 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
     plt.savefig('./output/test%d.png' % timeslot) #uncomment to save as img
     # plt.show() #uncomment to show windows
     plt.gcf().clear()
+
+print supervisor.transfer_success
+print "success rate: %0.2f%%" %((supervisor.transfer_success * setting.DATA_LENGTH)/setting.TOTAL_TIME_SLOT * 100)
 
 #=========================comments============================#
 #가운데는 일단 듣는 역할, 양옆 두개가 전송하려고 하는 상황
