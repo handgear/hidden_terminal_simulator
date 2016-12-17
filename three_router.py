@@ -46,13 +46,13 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
         if router_list[i].reset == 1:
             supervisor.transfer_success = supervisor.transfer_success + 1
             router_list[i].initialize_sender()
-            router_list[i].set_RTS_time(supervisor.current_time_slot)
+            # router_list[i].set_RTS_time(supervisor.current_time_slot)
         elif router_list[i].reset == 2:
             router_list[i].initialize_receiver()
         elif router_list[i].reset == 3:
             router_list[i].initialize_sender_without_RK()
             router_list[i].set_R()
-            router_list[i].set_RTS_time(supervisor.current_time_slot)
+            # router_list[i].set_RTS_time(supervisor.current_time_slot)
     # for i in range(setting.TOTAL_ROUTER_NUM):
     #     router_list[i].set_R()
     logging.info('rts time0: ' + str(router_list[0].time_to_send['RTS']))
@@ -76,7 +76,8 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
         #     router_list[i].time_to_send['RTS'] = router_list[i].time_to_send['RTS'] + 1
         #정해진 시간이 되면 RTS를 보낸다
         # if supervisor.current_time_slot == router_list[i].time_to_send['RTS']:
-        if router_list[i].backoff_data['R'] == 0 and router_list[i].state == '':
+        if router_list[i].backoff_data['R'] == 0 and router_list[i].state == '' and \
+        router_list[i].NAV == 0:
             if i == 0:
                 router_list[i].receiver = 1
             elif i == 1:
@@ -86,6 +87,7 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
 
             router_list[i].ctrl_data['RTS'] = router_list[i].receiver
             router_list[i].state = 'RTS'
+            router_list[i].time_to_send['RTS'] = supervisor.current_time_slot #add
 
         #RTS 보내고 난 다음에는 RTS flag 내려준다
         elif supervisor.current_time_slot > router_list[i].time_to_send['RTS']:
