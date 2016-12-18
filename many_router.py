@@ -80,11 +80,12 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
             router_list[i].set_R()
 
     #================receiver router divided == 0 ==============#
-    #receiver
+    #receiver: check RTS and send CTS
     for i in range(setting.TOTAL_ROUTER_NUM):
         #RTS가 한개만 오면 해당 라우터에 다음 타임슬롯에 모든 라우터에 CTS보낸다
         #범위 내의 라우터 중 RTS를 보내는 라우터가 하나일 때만 CTS 전송(단 라우터 번호는 RTS받은 라우터번호)
-        if router_list[i].state == '' or router_list[i].state == 'CTS_TIMEOUT':
+        if router_list[i].NAV == 0 and \
+        (router_list[i].state == '' or router_list[i].state == 'CTS_TIMEOUT'):
             router_list[i].sender_list = []
             for j in range(len(router_list[i].near_router)):
                 num = router_list[i].near_router[j][0] #router number
@@ -187,7 +188,7 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
         # if supervisor.current_time_slot == router_list[i].time_to_send['RTS']:
         if router_list[i].backoff_data['R'] == 0 and router_list[i].state == '' and \
         router_list[i].NAV == 0:
-            if len(router_list[i].near_router) == 0:
+            if len(router_list[i].near_router) == 0: # if no router is nearby, then don't send RTS
                 continue
             #select random router nearby
             rand_near_router = random.choice(router_list[i].near_router)
