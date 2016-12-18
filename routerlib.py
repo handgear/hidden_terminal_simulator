@@ -27,7 +27,7 @@ class Setting:
     TOTAL_ROUTER_NUM = 3
     ROUTER_RANGE = 300
     K_LIMIT = 4
-    TOTAL_TIME_SLOT = 30
+    TOTAL_TIME_SLOT = 50
     DATA_LENGTH = 2
 
 class Router:
@@ -69,7 +69,7 @@ class Router:
         self.receiver = -1 #when this router is sender, save info
         self.sender = -1 #when this router is receiver, save info
         self.time_to_send = {'RTS': 0, 'CTS': -1, 'DATA': -1, 'ACK': -1} #number of timeslot to send message
-        self.time_out = {'CTS': 2, 'ACK': 2}
+        self.time_out = {'CTS': 5, 'ACK': 5}
         self.time_to_end = {'DATA': -1}
         self.NAV = 0
         self.reset = 0 #flag 1 for sender reset, 2 for receiver reset
@@ -105,7 +105,7 @@ class Router:
         self.backoff_data = {'R': 0, 'K': 0}
         self.sender = -1
         self.time_to_send = {'RTS': 0, 'CTS': -1, 'DATA': -1, 'ACK': -1}
-        self.time_out = {'CTS': 2, 'ACK': 2}
+        self.time_out = {'CTS': 5, 'ACK': 5}
         self.time_to_end = {'DATA': -1, 'NAV': -1}
         self.reset = 0
         self.NAV = 0
@@ -115,7 +115,7 @@ class Router:
         self.ctrl_data = {'RTS': -1, 'CTS': -1, 'DATA': 0, 'ACK': -1}
         self.sender = -1
         self.time_to_send = {'RTS': 0, 'CTS': -1, 'DATA': -1, 'ACK': -1}
-        self.time_out = {'CTS': 2, 'ACK': 2}
+        self.time_out = {'CTS': 5, 'ACK': 5}
         self.time_to_end = {'DATA': -1, 'NAV': -1}
         self.reset = 0
 
@@ -124,7 +124,7 @@ class Router:
         self.ctrl_data = {'RTS': -1, 'CTS': -1, 'DATA': 0, 'ACK': -1}
         self.receiver = -1
         self.time_to_send = {'RTS': 0, 'CTS': -1, 'DATA': -1, 'ACK': -1}
-        self.time_out = {'CTS': 2, 'ACK': 2}
+        self.time_out = {'CTS': 5, 'ACK': 5}
         self.time_to_end = {'DATA': -1, 'NAV': -1}
         self.reset = 0
         self.sender_list = []
