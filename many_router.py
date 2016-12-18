@@ -335,8 +335,13 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
         #     circle = plt.Circle((router_list[j].x, router_list[j].y), radius=setting.ROUTER_RANGE, alpha=0.3, fc='blue')
         #     plt.gca().add_patch(circle)
 
-    #draw arrow
-    # plt.arrow(0, 0, 100, 100, head_width=20, head_length=20, width=5, fc='k', ec='k')
+        #draw arrow (example code)
+        # plt.arrow(0, 0, 100, 100, head_width=20, head_length=20, width=5, fc='k', ec='k')
+
+        #draw arrowto notate sending RTS
+        if router_list[j].state == 'RTS':
+            num = router_list[j].receiver
+            plt.arrow(router_list[j].x, router_list[j].y, router_list[num].x -router_list[j].x, router_list[num].y - router_list[j].y, head_width=30, head_length=30, width=5, fc='k', ec='k')
 
     #END drawing section
     plt.savefig('./output/test%d.png' % timeslot) #uncomment to save as img
