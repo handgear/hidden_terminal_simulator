@@ -291,7 +291,19 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
 
     # plot axis number
     plt.axis([0, 1000, 0, 1000])
-    plt.xlabel('Time Slot = %d' %supervisor.current_time_slot, fontsize=18)
+    plt.xlabel('Time Slot = %d' %(supervisor.current_time_slot-1), fontsize=18)
+
+    #color info bar on top
+    plt.text(20, 1045, 'RTS', style='italic',
+        bbox={'facecolor':'orange', 'alpha':0.3, 'pad':10})
+    plt.text(220, 1045, 'CTS', style='italic',
+        bbox={'facecolor':'blue', 'alpha':0.3, 'pad':10})
+    plt.text(420, 1045, 'WAIT_CTS', style='italic',
+        bbox={'facecolor':'cyan', 'alpha':0.3, 'pad':10})
+    plt.text(620, 1045, 'DATA', style='italic',
+        bbox={'facecolor':'green', 'alpha':0.3, 'pad':10})
+    plt.text(820, 1045, 'ACK', style='italic',
+        bbox={'facecolor':'green', 'alpha':0.8, 'pad':10})
 
     for j in range(setting.TOTAL_ROUTER_NUM):
         #draw router
@@ -343,7 +355,7 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
         #draw arrowto notate sending RTS
         if router_list[j].state == 'RTS':
             num = router_list[j].receiver
-            plt.arrow(router_list[j].x, router_list[j].y, router_list[num].x -router_list[j].x, router_list[num].y - router_list[j].y, head_width=30, head_length=30, width=5, fc='k', ec='k')
+            plt.arrow(router_list[j].x, router_list[j].y, router_list[num].x -router_list[j].x, router_list[num].y - router_list[j].y, head_width=30, head_length=30, width=5, fc='m', ec='m')
 
     #END drawing section
     plt.savefig('./output/test%d.png' % timeslot) #uncomment to save as img

@@ -292,12 +292,22 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
 
     # plot axis number
     plt.axis([0, 1000, 0, 1000])
-    plt.xlabel('Time Slot = %d' %supervisor.current_time_slot, fontsize=18)
+    plt.xlabel('Time Slot = %d' %(supervisor.current_time_slot-1), fontsize=18)
+
+    #color info bar on top
+    # DATA_SEND / DATA_RECEIVE / WAIT_ACK / ACK
+    plt.text(20, 1045, 'DATA_SEND', style='italic',
+        bbox={'facecolor':'greenyellow', 'alpha':0.5, 'pad':10})
+    plt.text(240, 1045, 'DATA_RECEIVE', style='italic',
+        bbox={'facecolor':'greenyellow', 'alpha':0.5, 'pad':10})
+    plt.text(620, 1045, 'WAIT_ACK', style='italic',
+        bbox={'facecolor':'limegreen', 'alpha':0.7, 'pad':10})
+    plt.text(820, 1045, 'ACK', style='italic',
+        bbox={'facecolor':'green', 'alpha':0.8, 'pad':10})
 
     for j in range(setting.TOTAL_ROUTER_NUM):
         #draw router
-        plt.plot(router_list[j].x, router_list[j].y,'bo')
-
+        plt.plot(router_list[j].x, router_list[j].y,'bH')
 
 
         #draw range of routers
@@ -319,11 +329,11 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
             plt.gca().add_patch(circle)
 
         elif router_list[j].state == 'DATA':
-            circle = plt.Circle((router_list[j].x, router_list[j].y), radius=setting.ROUTER_RANGE, alpha=0.3, fc='green')
+            circle = plt.Circle((router_list[j].x, router_list[j].y), radius=setting.ROUTER_RANGE, alpha=0.5, fc='limegreen')
             plt.gca().add_patch(circle)
 
         elif router_list[j].state == 'WAIT_ACK':
-            circle = plt.Circle((router_list[j].x, router_list[j].y), radius=setting.ROUTER_RANGE, alpha=0.5, fc='green')
+            circle = plt.Circle((router_list[j].x, router_list[j].y), radius=setting.ROUTER_RANGE, alpha=0.5, fc='limegreen')
             plt.gca().add_patch(circle)
 
         elif router_list[j].state == 'ACK':
@@ -344,7 +354,7 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
         #draw arrowto notate sending RTS
         if router_list[j].state == 'RTS':
             num = router_list[j].receiver
-            plt.arrow(router_list[j].x, router_list[j].y, router_list[num].x -router_list[j].x, router_list[num].y - router_list[j].y, head_width=30, head_length=30, width=5, fc='k', ec='k')
+            plt.arrow(router_list[j].x, router_list[j].y, router_list[num].x -router_list[j].x, router_list[num].y - router_list[j].y, head_width=30, head_length=30, width=5, fc='m', ec='m')
 
     #END drawing section
     plt.savefig('./output/test%d.png' % timeslot) #uncomment to save as img
