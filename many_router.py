@@ -52,6 +52,8 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
             router_list[i].initialize_receiver()
         elif router_list[i].reset == 3:
             router_list[i].initialize_sender_without_RK()
+            if router_list[i].backoff_data['K'] > setting.K_LIMIT:
+                outer_list[i].backoff_data['K'] = 0
             router_list[i].set_R()
             # router_list[i].set_RTS_time(supervisor.current_time_slot)
     # for i in range(setting.TOTAL_ROUTER_NUM):
