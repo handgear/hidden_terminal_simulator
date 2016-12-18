@@ -67,7 +67,7 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
         logging.info('backoff time K1: ' + str(router_list[1].backoff_data['K']))
         logging.info('backoff time K2: ' + str(router_list[2].backoff_data['K']))
 
-
+    # CTS time out, K=K+1, reset sender without R,K init
     for i in range(setting.TOTAL_ROUTER_NUM):
         if supervisor.current_time_slot > router_list[i].time_to_send['RTS'] and \
         router_list[i].state == 'WAIT_CTS' and router_list[i].time_out['CTS'] == 0:
@@ -96,23 +96,32 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
                     logging.debug('rts router from 0: ' + str(router_list[0].ctrl_data['RTS']))
                     logging.debug('rts router from 1: ' + str(router_list[1].ctrl_data['RTS']))
                     logging.debug('rts router from 2: ' + str(router_list[2].ctrl_data['RTS']))
-            #set time to send CTS
-            if len(router_list[i].sender_list) == 1 and router_list[i].time_to_send['CTS'] == -1:
-                router_list[i].time_to_send['CTS'] = supervisor.current_time_slot + 1
-                router_list[i].state = 'WAIT' # for timming problem
-        logging.debug("time slot for cts%d: "%i +  str(router_list[i].time_to_send['CTS']))
-        #CTS보낼 time slot 이 되면 CTS 보냄
-        if supervisor.current_time_slot == router_list[i].time_to_send['CTS']:
-            # router_list[i].ctrl_data['CTS'] = 0
-            #sender router number를 저장하여 전송 표현
-            router_list[i].ctrl_data['CTS'] = router_list[i].sender_list[0]
-            router_list[i].state = 'CTS'
-            logging.debug("sender router num for cts: " +  str(router_list[i].ctrl_data['CTS']))
+            #send CTS
+            if len(router_list[i].sender_list) == 1:
+                router_list[i].ctrl_data['CTS'] = router_list[i].sender_list[0]
+                router_list[i].state = 'CTS'
+                logging.debug("sender router num for cts: " +  str(router_list[i].ctrl_data['CTS']))
 
-            #send NAV to other routers
-            for router_num in range(len(router_list[i].near_router)):
-                if router_num is not router_list[i].sender_list[0]: #only send NAV to other routers
-                    router_list[router_num].NAV = setting.DATA_LENGTH + 2
+                #send NAV to other routers
+                for router_num in range(len(router_list[i].near_router)):
+                    if router_num is not router_list[i].sender_list[0]: #only send NAV to other routers
+                        router_list[router_num].NAV = setting.DATA_LENGTH + 2
+
+                #down RTS flag
+                router_list[router_list[i].sender_list[0]].ctrl_data['RTS'] = -1
+
+        # #CTS보낼 time slot 이 되면 CTS 보냄
+        # if supervisor.current_time_slot == router_list[i].time_to_send['CTS']:
+        #     # router_list[i].ctrl_data['CTS'] = 0
+        #     #sender router number를 저장하여 전송 표현
+        #     router_list[i].ctrl_data['CTS'] = router_list[i].sender_list[0]
+        #     router_list[i].state = 'CTS'
+        #     logging.debug("sender router num for cts: " +  str(router_list[i].ctrl_data['CTS']))
+
+        #     #send NAV to other routers
+        #     for router_num in range(len(router_list[i].near_router)):
+        #         if router_num is not router_list[i].sender_list[0]: #only send NAV to other routers
+        #             router_list[router_num].NAV = setting.DATA_LENGTH + 2
 
         #CTS 전송 완료된 경우 flag 내려줌
         elif supervisor.current_time_slot > router_list[i].time_to_send['CTS']:
@@ -120,30 +129,6 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
             # router_list[i].sender_list = [] #reset sender_list
 
         #=================sender router devided = 0=============#
-        #현재 받는 대상은 1번 라우터로 설정, 추후에는 인접한 라우터 중 무작위로 선정
-    #sender
-    for i in range(setting.TOTAL_ROUTER_NUM):
-        #NAV 에 따른 RTS송신 지연
-        # if router_list[i].NAV is not 0:
-        #     router_list[i].time_to_send['RTS'] = router_list[i].time_to_send['RTS'] + 1
-        #정해진 시간이 되면 RTS를 보낸다
-        # if supervisor.current_time_slot == router_list[i].time_to_send['RTS']:
-        if router_list[i].backoff_data['R'] == 0 and router_list[i].state == '' and \
-        router_list[i].NAV == 0:
-            if i == 0:
-                router_list[i].receiver = 1
-            elif i == 1:
-                router_list[i].receiver = random.choice([0, 2])
-            elif i == 2:
-                router_list[i].receiver = 1
-
-            router_list[i].ctrl_data['RTS'] = router_list[i].receiver
-            router_list[i].state = 'RTS'
-            router_list[i].time_to_send['RTS'] = supervisor.current_time_slot #add
-
-        #RTS 보내고 난 다음에는 RTS flag 내려준다
-        elif supervisor.current_time_slot > router_list[i].time_to_send['RTS']:
-            router_list[i].ctrl_data['RTS'] = -1
 
     #sender
     for i in range(setting.TOTAL_ROUTER_NUM):
@@ -186,11 +171,36 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
             router_list[router_list[i].receiver].ctrl_data['CTS'] == -1:
             # router_list[i].receiver == -1
                 router_list[i].state = 'WAIT_CTS'
-            #CTS time out, K=K+1
-            elif router_list[i].time_out['CTS'] == 0:
-                router_list[i].backoff_data['K'] = router_list[i].backoff_data['K'] + 1
-                router_list[i].state = 'CTS_TIMEOUT'
-                router_list[i].reset = 3 #reset sender without RK
+            #CTS time out, K=K+1 #moved to top
+            # elif router_list[i].time_out['CTS'] == 0:
+            #     router_list[i].backoff_data['K'] = router_list[i].backoff_data['K'] + 1
+            #     router_list[i].state = 'CTS_TIMEOUT'
+            #     router_list[i].reset = 3 #reset sender without RK
+
+    #현재 받는 대상은 1번 라우터로 설정, 추후에는 인접한 라우터 중 무작위로 선정
+    #sender: send RTS
+    for i in range(setting.TOTAL_ROUTER_NUM):
+        #NAV 에 따른 RTS송신 지연
+        # if router_list[i].NAV is not 0:
+        #     router_list[i].time_to_send['RTS'] = router_list[i].time_to_send['RTS'] + 1
+        #정해진 시간이 되면 RTS를 보낸다
+        # if supervisor.current_time_slot == router_list[i].time_to_send['RTS']:
+        if router_list[i].backoff_data['R'] == 0 and router_list[i].state == '' and \
+        router_list[i].NAV == 0:
+            if i == 0:
+                router_list[i].receiver = 1
+            elif i == 1:
+                router_list[i].receiver = random.choice([0, 2])
+            elif i == 2:
+                router_list[i].receiver = 1
+
+            router_list[i].ctrl_data['RTS'] = router_list[i].receiver
+            router_list[i].state = 'RTS'
+        #     router_list[i].time_to_send['RTS'] = supervisor.current_time_slot #add
+
+        # #RTS 보내고 난 다음에는 RTS flag 내려준다
+        # elif supervisor.current_time_slot > router_list[i].time_to_send['RTS']:
+        #     router_list[i].ctrl_data['RTS'] = -1
 
     #sender
     for i in range(setting.TOTAL_ROUTER_NUM):
