@@ -24,10 +24,10 @@ class Line:
 class Setting:
     MAX_ROUTER_NUM = 1500
     MAX_ROUTER_RANGE = 100
-    TOTAL_ROUTER_NUM = 3
+    TOTAL_ROUTER_NUM = 5
     ROUTER_RANGE = 300
     K_LIMIT = 4
-    TOTAL_TIME_SLOT = 50
+    TOTAL_TIME_SLOT = 30
     DATA_LENGTH = 2
 
 class Router:
@@ -53,10 +53,15 @@ class Router:
     #     self.reset = 0 #flag 1 for sender reset, 2 for receiver reset
     #     self.sender_list = []
 
-    def __init__(self, x, y):
+    def __init__(self, x=None, y=None):
         #place router in position x,y
-        self.x = x
-        self.y = y
+        if x is None and y is None:
+            self.x = random.randrange(1, 1000)
+            self.y = random.randrange(1, 1000)
+        else:
+            self.x = x
+            self.y = y
+
         self.near_router = []
         self.state = '' #state info for display
         #'RTS', 'CTS', 'DATA', 'ACK', 'WAIT'
