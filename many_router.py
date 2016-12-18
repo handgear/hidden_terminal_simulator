@@ -7,8 +7,8 @@ from matplotlib.patches import Circle
 from matplotlib.lines import Line2D
 from routerlib import *
 import logging, sys
-logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
-# logging.basicConfig(stream=sys.stderr, level=logging.INFO)
+# logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
+logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 # logging.basicConfig(stream=sys.stderr, level=logging.WARNING)
 
 
@@ -45,14 +45,15 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
     #reset router
     for i in range(setting.TOTAL_ROUTER_NUM):
         if router_list[i].reset == 1:
+            supervisor.transfer_success = supervisor.transfer_success + 1
             router_list[i].initialize_sender()
-            router_list[i].set_RTS_time(supervisor.current_time_slot)
+            # router_list[i].set_RTS_time(supervisor.current_time_slot)
         elif router_list[i].reset == 2:
             router_list[i].initialize_receiver()
         elif router_list[i].reset == 3:
             router_list[i].initialize_sender_without_RK()
             router_list[i].set_R()
-            router_list[i].set_RTS_time(supervisor.current_time_slot)
+            # router_list[i].set_RTS_time(supervisor.current_time_slot)
     # for i in range(setting.TOTAL_ROUTER_NUM):
     #     router_list[i].set_R()
     logging.info('rts time0: ' + str(router_list[0].time_to_send['RTS']))
@@ -66,149 +67,190 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
         logging.info('backoff time K0: ' + str(router_list[0].backoff_data['K']))
         logging.info('backoff time K1: ' + str(router_list[1].backoff_data['K']))
         logging.info('backoff time K2: ' + str(router_list[2].backoff_data['K']))
-    for divided_time in range(2):
+
+    # CTS time out, K=K+1, reset sender without R,K init
+    for i in range(setting.TOTAL_ROUTER_NUM):
+        if supervisor.current_time_slot > router_list[i].time_to_send['RTS'] and \
+        router_list[i].state == 'WAIT_CTS' and router_list[i].time_out['CTS'] == 0:
+            router_list[i].backoff_data['K'] = router_list[i].backoff_data['K'] + 1
+            # router_list[i].state = 'CTS_TIMEOUT'
+            print "%d router been CTS_TIMEOUT and reset" %i
+            # router_list[i].reset = 3 #reset sender without RK
+            router_list[i].initialize_sender_without_RK()
+            router_list[i].set_R()
+
+    #================receiver router divided == 0 ==============#
+    #receiver
+    for i in range(setting.TOTAL_ROUTER_NUM):
+        #RTS가 한개만 오면 해당 라우터에 다음 타임슬롯에 모든 라우터에 CTS보낸다
+        #범위 내의 라우터 중 RTS를 보내는 라우터가 하나일 때만 CTS 전송(단 라우터 번호는 RTS받은 라우터번호)
+        if router_list[i].state == '' or router_list[i].state == 'CTS_TIMEOUT':
+            router_list[i].sender_list = []
+            for j in range(len(router_list[i].near_router)):
+                num = router_list[i].near_router[j][0] #router number
+                logging.debug('i:'+ str(i) + ' num or near router: ' + str(num))
+                logging.debug("router_list[num].ctrl_data['RTS']: " + str(router_list[num].ctrl_data['RTS']))
+                if router_list[num].ctrl_data['RTS'] == i:
+                    router_list[i].sender_list.append(num)
+                    logging.debug('appended router num: ' + str(num))
+                    logging.debug('len of sender list'+str(i)+': ' + str(len(router_list[i].sender_list)))
+                    logging.debug('rts router from 0: ' + str(router_list[0].ctrl_data['RTS']))
+                    logging.debug('rts router from 1: ' + str(router_list[1].ctrl_data['RTS']))
+                    logging.debug('rts router from 2: ' + str(router_list[2].ctrl_data['RTS']))
+            #send CTS
+            if len(router_list[i].sender_list) == 1:
+                router_list[i].ctrl_data['CTS'] = router_list[i].sender_list[0]
+                router_list[i].state = 'CTS'
+                logging.debug("sender router num for cts: " +  str(router_list[i].ctrl_data['CTS']))
+
+                #send NAV to other routers
+                for router_num in range(len(router_list[i].near_router)):
+                    if router_num is not router_list[i].sender_list[0]: #only send NAV to other routers
+                        router_list[router_num].NAV = setting.DATA_LENGTH + 2
+
+                #down RTS flag
+                router_list[router_list[i].sender_list[0]].ctrl_data['RTS'] = -1
+
+        # #CTS보낼 time slot 이 되면 CTS 보냄
+        # if supervisor.current_time_slot == router_list[i].time_to_send['CTS']:
+        #     # router_list[i].ctrl_data['CTS'] = 0
+        #     #sender router number를 저장하여 전송 표현
+        #     router_list[i].ctrl_data['CTS'] = router_list[i].sender_list[0]
+        #     router_list[i].state = 'CTS'
+        #     logging.debug("sender router num for cts: " +  str(router_list[i].ctrl_data['CTS']))
+
+        #     #send NAV to other routers
+        #     for router_num in range(len(router_list[i].near_router)):
+        #         if router_num is not router_list[i].sender_list[0]: #only send NAV to other routers
+        #             router_list[router_num].NAV = setting.DATA_LENGTH + 2
+
+        #CTS 전송 완료된 경우 flag 내려줌
+        elif supervisor.current_time_slot > router_list[i].time_to_send['CTS']:
+            router_list[i].ctrl_data['CTS'] = -1
+            # router_list[i].sender_list = [] #reset sender_list
+
         #=================sender router devided = 0=============#
-        #현재 받는 대상은 1번 라우터로 설정, 추후에는 인접한 라우터 중 무작위로 선정
-        if divided_time == 0: #sender
-            for i in range(setting.TOTAL_ROUTER_NUM):
-                #정해진 시간이 되면 RTS를 보낸다
-                if supervisor.current_time_slot == router_list[i].time_to_send['RTS']:
-                    if i == 0:
-                        router_list[i].receiver = 1
-                    elif i == 1:
-                        router_list[i].receiver = 2
-                    elif i == 2:
-                        router_list[i].receiver = 1
 
-                    router_list[i].ctrl_data['RTS'] = router_list[i].receiver
-                    router_list[i].state = 'RTS'
+    #sender
+    for i in range(setting.TOTAL_ROUTER_NUM):
+        #CTS 받은 경우에만 DATA 전송
+        if router_list[i].time_to_send['DATA'] <= supervisor.current_time_slot and \
+        router_list[i].time_to_send['DATA'] is not -1:
+            #데이터 전송 60time slot동안 진행
+            if supervisor.current_time_slot < router_list[router_list[i].receiver].time_to_end['DATA']:
+                router_list[router_list[i].receiver].ctrl_data['DATA'] = router_list[router_list[i].receiver].ctrl_data['DATA'] + 1
+                router_list[i].state = 'DATA'
+                logging.debug('from router send data num: ' + str(router_list[router_list[i].receiver].ctrl_data['DATA']))
 
-                #RTS 보내고 난 다음에는 RTS flag 내려준다
-                elif supervisor.current_time_slot > router_list[i].time_to_send['RTS']:
-                    router_list[i].ctrl_data['RTS'] = -1
 
-        if divided_time == 0: #sender
-            for i in range(setting.TOTAL_ROUTER_NUM):
-                #CTS 받은 경우에만 DATA 전송
-                if router_list[i].time_to_send['DATA'] <= supervisor.current_time_slot and \
-                router_list[i].time_to_send['DATA'] is not -1:
-                    #데이터 전송 60time slot동안 진행
-                    if supervisor.current_time_slot < router_list[router_list[i].receiver].time_to_end['DATA']:
-                        router_list[router_list[i].receiver].ctrl_data['DATA'] = router_list[router_list[i].receiver].ctrl_data['DATA'] + 1
-                        router_list[i].state = 'DATA'
-                        logging.debug('from router send data num: ' + str(router_list[router_list[i].receiver].ctrl_data['DATA']))
+    #================receiver router divided == 0 ==============#
+    #receiver
+    for i in range(setting.TOTAL_ROUTER_NUM):
+        #ACK를 보내야하는 time slot에 도달한 경우, ACK 보냄
+        if router_list[i].time_to_send['ACK'] == supervisor.current_time_slot:
+            router_list[i].ctrl_data['ACK'] = router_list[i].sender_list[0] #ACK를 받을 라우터 번호 입력
+            router_list[i].reset = 2 #reset receiver
+            router_list[i].state = 'ACK'
 
-        #================receiver router divided == 0 ==============#
-        if divided_time == 0: #receiver
-            for i in range(setting.TOTAL_ROUTER_NUM):
-                #RTS가 한개만 오면 해당 라우터에 다음 타임슬롯에 모든 라우터에 CTS보낸다
-                #범위 내의 라우터 중 RTS를 보내는 라우터가 하나일 때만 CTS 전송(단 라우터 번호는 RTS받은 라우터번호)
-                if router_list[i].state == '' or router_list[i].state == 'CTS_TIMEOUT':
-                    router_list[i].sender_list = []
-                    for j in range(len(router_list[i].near_router)):
-                        num = router_list[i].near_router[j][0] #router number
-                        logging.debug('i:'+ str(i) + ' num or near router: ' + str(num))
-                        logging.debug("router_list[num].ctrl_data['RTS']: " + str(router_list[num].ctrl_data['RTS']))
-                        if router_list[num].ctrl_data['RTS'] == i:
-                            router_list[i].sender_list.append(num)
-                            logging.debug('appended router num: ' + str(num))
-                            logging.debug('len of sender list'+str(i)+': ' + str(len(router_list[i].sender_list)))
-                            logging.debug('rts router from 0: ' + str(router_list[0].ctrl_data['RTS']))
-                            logging.debug('rts router from 1: ' + str(router_list[1].ctrl_data['RTS']))
-                            logging.debug('rts router from 2: ' + str(router_list[2].ctrl_data['RTS']))
-                    if len(router_list[i].sender_list) == 1 and router_list[i].time_to_send['CTS'] == -1:
-                        router_list[i].time_to_send['CTS'] = supervisor.current_time_slot + 1
-                        router_list[i].state = 'WAIT' # for timming problem
-                logging.debug("time slot for cts%d: "%i +  str(router_list[i].time_to_send['CTS']))
-                #CTS보낼 time slot 이 되면 CTS 보냄
-                if supervisor.current_time_slot == router_list[i].time_to_send['CTS']:
-                    # router_list[i].ctrl_data['CTS'] = 0
-                    #sender router number를 저장하여 전송 표현
-                    router_list[i].ctrl_data['CTS'] = router_list[i].sender_list[0]
-                    router_list[i].state = 'CTS'
-                    logging.debug("sender router num for cts: " +  str(router_list[i].ctrl_data['CTS']))
-                #CTS 전송 완료된 경우 flag 내려줌
-                elif supervisor.current_time_slot > router_list[i].time_to_send['CTS']:
-                    router_list[i].ctrl_data['CTS'] = -1
-                    # router_list[i].sender_list = [] #reset sender_list
+    #=================sender router devided = 1=============#
+    #sender
+    for i in range(setting.TOTAL_ROUTER_NUM):
+        if supervisor.current_time_slot > router_list[i].time_to_send['RTS'] and \
+        router_list[i].state == 'RTS' or router_list[i].state == 'WAIT_CTS':
+            logging.debug('entered setting CTS by: ' + str(i))
+            logging.debug('router_list[receiver].ctrl_data[CTS]: ' + str(router_list[router_list[i].receiver].ctrl_data['CTS']))
+            #CTS 받은 경우, 데이터 전송 시기를 지정해준다
+            if router_list[i].time_out['CTS'] is not 0 and \
+            router_list[router_list[i].receiver].ctrl_data['CTS'] == i:
+                #receiver router number, [0] for router number, ==0 for sender router number:
+                router_list[i].time_to_send['DATA'] = supervisor.current_time_slot + 1
+                router_list[router_list[i].receiver].time_to_end['DATA'] = supervisor.current_time_slot + setting.DATA_LENGTH + 1 #데이터 전송이 끝나는 시기를 입력해 놓는다
+                # router_list[i].receiver = 1
+                router_list[i].state = 'CTS'
+            #CTS 받지 못한 경우
+            elif router_list[i].time_out['CTS'] is not 0 and \
+            router_list[router_list[i].receiver].ctrl_data['CTS'] == -1:
+            # router_list[i].receiver == -1
+                router_list[i].state = 'WAIT_CTS'
+            #CTS time out, K=K+1 #moved to top
+            # elif router_list[i].time_out['CTS'] == 0:
+            #     router_list[i].backoff_data['K'] = router_list[i].backoff_data['K'] + 1
+            #     router_list[i].state = 'CTS_TIMEOUT'
+            #     router_list[i].reset = 3 #reset sender without RK
 
-        if divided_time == 0: #receiver
-            for i in range(setting.TOTAL_ROUTER_NUM):
-                #ACK를 보내야하는 time slot에 도달한 경우, ACK 보냄
-                if router_list[i].time_to_send['ACK'] == supervisor.current_time_slot:
-                    router_list[i].ctrl_data['ACK'] = router_list[i].sender_list[0] #ACK를 받을 라우터 번호 입력
-                    router_list[i].reset = 2 #reset receiver
-                    router_list[i].state = 'ACK'
+    #sender: send RTS
+    for i in range(setting.TOTAL_ROUTER_NUM):
+        #NAV 에 따른 RTS송신 지연
+        # if router_list[i].NAV is not 0:
+        #     router_list[i].time_to_send['RTS'] = router_list[i].time_to_send['RTS'] + 1
+        #정해진 시간이 되면 RTS를 보낸다
+        # if supervisor.current_time_slot == router_list[i].time_to_send['RTS']:
+        if router_list[i].backoff_data['R'] == 0 and router_list[i].state == '' and \
+        router_list[i].NAV == 0:
+            if len(router_list[i].near_router) == 0:
+                continue
+            #select random router nearby
+            rand_near_router = random.choice(router_list[i].near_router)
+            router_list[i].receiver = rand_near_router[0]
 
-        #=================sender router devided = 1=============#
-        if divided_time == 1: #sender
-            for i in range(setting.TOTAL_ROUTER_NUM):
-                if supervisor.current_time_slot > router_list[i].time_to_send['RTS'] and \
-                router_list[i].state == 'RTS' or router_list[i].state == 'WAIT_CTS':
-                    logging.debug('entered setting CTS by: ' + str(i))
-                    logging.debug('router_list[receiver].ctrl_data[CTS]: ' + str(router_list[router_list[i].receiver].ctrl_data['CTS']))
-                    #CTS 받은 경우, 데이터 전송 시기를 지정해준다
-                    if router_list[i].time_out['CTS'] is not 0 and \
-                    router_list[router_list[i].receiver].ctrl_data['CTS'] == i:
-                        #receiver router number, [0] for router number, ==0 for sender router number:
-                        router_list[i].time_to_send['DATA'] = supervisor.current_time_slot + 1
-                        router_list[router_list[i].receiver].time_to_end['DATA'] = supervisor.current_time_slot + setting.DATA_LENGTH + 1 #데이터 전송이 끝나는 시기를 입력해 놓는다
-                        # router_list[i].receiver = 1
-                        router_list[i].state = 'CTS'
-                    #CTS 받지 못한 경우
-                    elif router_list[i].time_out['CTS'] is not 0 and \
-                    router_list[router_list[i].receiver].ctrl_data['CTS'] == -1:
-                    # router_list[i].receiver == -1
-                        router_list[i].state = 'WAIT_CTS'
-                    #CTS time out, K=K+1
-                    elif router_list[i].time_out['CTS'] == 0:
-                        router_list[i].backoff_data['K'] = router_list[i].backoff_data['K'] + 1
-                        router_list[i].state = 'CTS_TIMEOUT'
-                        router_list[i].reset = 3 #reset sender without RK
+            router_list[i].ctrl_data['RTS'] = router_list[i].receiver
+            router_list[i].state = 'RTS'
+        #     router_list[i].time_to_send['RTS'] = supervisor.current_time_slot #add
 
-        if divided_time == 1 and \
-        supervisor.current_time_slot == router_list[router_list[i].receiver].time_to_end['DATA']: #sender
+        # #RTS 보내고 난 다음에는 RTS flag 내려준다
+        # elif supervisor.current_time_slot > router_list[i].time_to_send['RTS']:
+        #     router_list[i].ctrl_data['RTS'] = -1
+
+    #sender
+    for i in range(setting.TOTAL_ROUTER_NUM):
+        if supervisor.current_time_slot == router_list[router_list[i].receiver].time_to_end['DATA']:
             #데이터를 다 보낸 경우에만 ACK 기다림
-            logging.debug('1_data_num: ' + str(router_list[router_list[i].receiver].ctrl_data['DATA']))
-            for i in range(setting.TOTAL_ROUTER_NUM):
-                if router_list[router_list[i].receiver].ctrl_data['DATA'] == setting.DATA_LENGTH:
-                    #ACK 받은 경우
-                    if router_list[i].time_out['ACK'] is not 0 and \
-                    router_list[router_list[i].receiver].ctrl_data['ACK'] == i:
-                        router_list[i].state = 'ACK'
-                        router_list[i].reset = 1 #reset sender
-                    #ACK 받지 못한 경우
-                    elif router_list[i].time_out['ACK'] is not 0 and \
-                    router_list[router_list[i].receiver].ctrl_data['ACK'] == -1:
-                        router_list[i].state = 'WAIT_ACK'
-                    #ACK time out, K=K+1
-                    elif router_list[i].time_out['ACK'] == 0:
-                        router_list[i].backoff_data['K'] = router_list[i].backoff_data['K'] + 1
-                        router_list[i].state = 'ACK_TIMEOUT'
+            # logging.debug('1_data_num: ' + str(router_list[router_list[i].receiver].ctrl_data['DATA']))
+            if router_list[router_list[i].receiver].ctrl_data['DATA'] == setting.DATA_LENGTH:
+                #ACK 받은 경우
+                if router_list[i].time_out['ACK'] is not 0 and \
+                router_list[router_list[i].receiver].ctrl_data['ACK'] == i:
+                    router_list[i].state = 'ACK'
+                    router_list[i].reset = 1 #reset sender
+                #ACK 받지 못한 경우
+                elif router_list[i].time_out['ACK'] is not 0 and \
+                router_list[router_list[i].receiver].ctrl_data['ACK'] == -1:
+                    router_list[i].state = 'WAIT_ACK'
+                #ACK time out, K=K+1
+                elif router_list[i].time_out['ACK'] == 0:
+                    router_list[i].backoff_data['K'] = router_list[i].backoff_data['K'] + 1
+                    router_list[i].state = 'ACK_TIMEOUT'
 
-        #================receiver router divided == 1 ==============#
-        if divided_time == 1: #receiver
-            for i in range(setting.TOTAL_ROUTER_NUM):
-                #DATA 받는 중
-                #데이터를 받을 때만 데이터 상테를 표시하도록 조건 정해야함...
-                if router_list[i].ctrl_data['DATA'] is not 0 and \
-                supervisor.current_time_slot < router_list[i].time_to_end['DATA']:
-                    router_list[i].state = 'DATA'
-                    logging.debug('data receiving')
-                #데이터 전송 완료된 경우 ACK 시간 세팅 (receiver쪽에서 세팅)
-                if router_list[i].ctrl_data['DATA'] == setting.DATA_LENGTH:
-                    router_list[i].time_to_send['ACK'] = supervisor.current_time_slot + 1
-                    # router_list[i].ctrl_data['DATA'] = 0 #reset
+    #================receiver router divided == 1 ==============#
+    #receiver
+    for i in range(setting.TOTAL_ROUTER_NUM):
+        #DATA 받는 중
+        #데이터를 받을 때만 데이터 상테를 표시하도록 조건 정해야함...
+        if router_list[i].ctrl_data['DATA'] is not 0 and \
+        supervisor.current_time_slot < router_list[i].time_to_end['DATA']:
+            router_list[i].state = 'DATA'
+            logging.debug('data receiving')
+        #데이터 전송 완료된 경우 ACK 시간 세팅 (receiver쪽에서 세팅)
+        if router_list[i].ctrl_data['DATA'] == setting.DATA_LENGTH:
+            router_list[i].time_to_send['ACK'] = supervisor.current_time_slot + 1
+            # router_list[i].ctrl_data['DATA'] = 0 #reset
 
     #======================================#
     #before time slot change (only divided time change)
     #======================================#
+    logging.info("NAV 0: "+str(router_list[0].NAV))
+    logging.info("NAV 1: "+str(router_list[1].NAV))
+    logging.info("NAV 2: "+str(router_list[2].NAV))
 
     #only do once in each time slot
     for i in range(setting.TOTAL_ROUTER_NUM):
+        #debug
+        logging.info("i: "+str(i)+ "||state: " + str(router_list[i].state))
+        logging.info("backoff R: "+str(router_list[i].backoff_data['R']))
+        logging.info("is it idle?: "+str(router_list[i].is_channal_idle(router_list)))
         #기다리고 있는 동안 R 1씩 줄이기
         if router_list[i].state == '' and router_list[i].backoff_data['R'] is not 0 and \
-        router_list[i].is_channal_idle(router_list):
+        router_list[i].is_channal_idle(router_list) == True:
             router_list[i].backoff_data['R'] = router_list[i].backoff_data['R'] -1
         #CTS 기다리고 있는 동안 time_out['CTS'] 1씩 줄이기
         if router_list[i].state == 'WAIT_CTS':
@@ -216,7 +258,9 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
         #ACK 기다리고 있는 동안 time_out['ACK'] 1씩 줄이기
         if router_list[i].state == 'WAIT_ACK':
             router_list[i].time_out['ACK'] =  router_list[i].time_out['ACK'] - 1
-
+        #NAV timer 줄이기
+        if router_list[i].NAV is not 0:
+            router_list[i].NAV = router_list[i].NAV - 1
     #move time slot to next time slot
     supervisor.current_time_slot = supervisor.current_time_slot + 1
 
@@ -231,6 +275,8 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
     logging.debug('timeout0: ' + str(router_list[1].time_out['CTS']))
     logging.info("router_list[2].state: " + router_list[2].state)
     logging.debug('timeout0: ' + str(router_list[2].time_out['CTS']))
+
+
     # print router_list[1].near_router[0][0]
     # print router_list[1].near_router[1][0]
     logging.info('====================================')
@@ -295,6 +341,9 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
     plt.savefig('./output/test%d.png' % timeslot) #uncomment to save as img
     # plt.show() #uncomment to show windows
     plt.gcf().clear()
+
+print supervisor.transfer_success
+print "success rate: %0.2f%%" %((supervisor.transfer_success * setting.DATA_LENGTH)/setting.TOTAL_TIME_SLOT * 100)
 
 #=========================comments============================#
 #가운데는 일단 듣는 역할, 양옆 두개가 전송하려고 하는 상황
