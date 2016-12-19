@@ -7,8 +7,8 @@ from matplotlib.patches import Circle
 from matplotlib.lines import Line2D
 from routerlib import *
 import logging, sys
-# logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
-logging.basicConfig(stream=sys.stderr, level=logging.INFO)
+logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
+# logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 # logging.basicConfig(stream=sys.stderr, level=logging.WARNING)
 
 
@@ -85,19 +85,20 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
         if router_list[i].time_to_send['DATA'] <= supervisor.current_time_slot and \
         router_list[i].time_to_send['DATA'] is not -1:
             #데이터 전송 60time slot동안 진행
-            if supervisor.current_time_slot < router_list[router_list[i].receiver].time_to_end['DATA']:
-                router_list[router_list[i].receiver].ctrl_data['DATA'] = router_list[router_list[i].receiver].ctrl_data['DATA'] + 1
+            if supervisor.current_time_slot < router_list[i].time_to_end['DATA']:
+                router_list[i].ctrl_data['DATA'] = router_list[i].ctrl_data['DATA'] + 1
                 router_list[i].state = 'DATA'
                 logging.debug('from router send data num: ' + str(router_list[router_list[i].receiver].ctrl_data['DATA']))
 
 
     #================receiver router divided == 0 ==============#
-    #receiver
+    # #receiver: send ACK
     for i in range(setting.TOTAL_ROUTER_NUM):
         #ACK를 보내야하는 time slot에 도달한 경우, ACK 보냄
-        if router_list[i].time_to_send['ACK'] == supervisor.current_time_slot:
+        if router_list[i].time_to_send['ACK'] == supervisor.current_time_slot and \
+        router_list[i].single_sender == 1:
             router_list[i].ctrl_data['ACK'] = router_list[i].sender_list[0] #ACK를 받을 라우터 번호 입력
-            router_list[i].reset = 2 #reset receiver
+            # router_list[i].reset = 2 #reset receiver
             router_list[i].state = 'ACK'
 
     #=================sender router devided = 1=============#
@@ -109,7 +110,8 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
             if i == 0:
                 router_list[i].receiver = 1
             elif i == 1:
-                router_list[i].receiver = random.choice([0, 2])
+                # router_list[i].receiver = random.choice([0, 2])
+                router_list[i].receiver = 2
             elif i == 2:
                 router_list[i].receiver = 1
 
@@ -117,44 +119,100 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
             #관련 성정하고 최종적으로는 DATA보내는 상태로 빠져나옴
             #이후 receiver가 보내는 데이터 확인하는 부분 필요함
             #============작성필요~~~!!!!===================#
-            # router_list[i].ctrl_data['RTS'] = router_list[i].receiver
-            # router_list[i].state = 'RTS'
+            router_list[i].ctrl_data['noRTS'] = router_list[i].receiver
+            router_list[i].time_to_end['DATA'] = supervisor.current_time_slot + setting.DATA_LENGTH - 1#데이터 전송이 끝나는 시기를 입력해 놓는다(보내는 자우터 자신에게 기록, 전송받는 측이 참)
+            logging.info("i "+ str(i) + " time to end: " + str(router_list[i].time_to_end['DATA']))
+            router_list[i].state = 'DATA_SEND'
+            #
         #     router_list[i].time_to_send['RTS'] = supervisor.current_time_slot #add
+
+
+
+    #sender
+    #count sended data num
+    #data = data+1
+
 
 
     #sender
     for i in range(setting.TOTAL_ROUTER_NUM):
-        if supervisor.current_time_slot == router_list[router_list[i].receiver].time_to_end['DATA']:
+        if supervisor.current_time_slot == router_list[i].time_to_end['DATA'] + 1:
             #데이터를 다 보낸 경우에만 ACK 기다림
             # logging.debug('1_data_num: ' + str(router_list[router_list[i].receiver].ctrl_data['DATA']))
-            if router_list[router_list[i].receiver].ctrl_data['DATA'] == setting.DATA_LENGTH:
-                #ACK 받은 경우
-                if router_list[i].time_out['ACK'] is not 0 and \
-                router_list[router_list[i].receiver].ctrl_data['ACK'] == i:
-                    router_list[i].state = 'ACK'
-                    router_list[i].reset = 1 #reset sender
-                #ACK 받지 못한 경우
-                elif router_list[i].time_out['ACK'] is not 0 and \
-                router_list[router_list[i].receiver].ctrl_data['ACK'] == -1:
-                    router_list[i].state = 'WAIT_ACK'
-                # #ACK time out, K=K+1
-                # elif router_list[i].time_out['ACK'] == 0:
-                #     router_list[i].backoff_data['K'] = router_list[i].backoff_data['K'] + 1
-                #     router_list[i].state = 'ACK_TIMEOUT'
+            # if router_list[router_list[i].receiver].ctrl_data['DATA'] == setting.DATA_LENGTH:
+            #ACK 받은 경우
+            if router_list[i].time_out['ACK'] is not 0 and \
+            router_list[router_list[i].receiver].ctrl_data['ACK'] == i:
+                router_list[i].state = 'ACK'
+                router_list[i].reset = 1 #reset sender
+                router_list[router_list[i].receiver].reset = 2
+                router_list[router_list[i].receiver].state = 'ACK'
+            #ACK 받지 못한 경우
+            elif router_list[i].time_out['ACK'] is not 0 and \
+            router_list[router_list[i].receiver].ctrl_data['ACK'] == -1:
+                router_list[i].state = 'WAIT_ACK'
+            # #ACK time out, K=K+1
+            # elif router_list[i].time_out['ACK'] == 0:
+            #     router_list[i].backoff_data['K'] = router_list[i].backoff_data['K'] + 1
+            #     router_list[i].state = 'ACK_TIMEOUT'
 
     #================receiver router divided == 1 ==============#
-    #receiver
+    #receiver: receiving data
+    #check who is sending
+    for i in range(setting.TOTAL_ROUTER_NUM):
+        if router_list[i].state == '':
+            for j in range(len(router_list[i].near_router)):
+                num = router_list[i].near_router[j][0] #router number
+                if router_list[num].ctrl_data['noRTS'] == i:
+                    router_list[i].sender_list.append(num)
+
+                    logging.debug('appended router num: ' + str(num))
+                    logging.debug('len of sender list'+str(i)+': ' + str(len(router_list[i].sender_list)))
+
+            #update state
+            if len(router_list[i].sender_list) > 0:
+                router_list[i].state = 'DATA_RECEIVE'
+            #check is it only one router sending
+            if len(router_list[i].sender_list) == 1:
+                router_list[i].single_sender = 1
+
+
+    for i in range(setting.TOTAL_ROUTER_NUM):
+        if router_list[i].state == '' or router_list[i].state == 'DATA_RECEIVE':
+            temp = []
+            for j in range(len(router_list[i].near_router)):
+                num = router_list[i].near_router[j][0] #router number
+                if router_list[num].ctrl_data['noRTS'] == i:
+                    temp.append(num)
+                    # router_list[i].sender_list.append(num)
+
+                    # logging.debug('appended router num: ' + str(num))
+                    # logging.debug('len of sender list'+str(i)+': ' + str(len(router_list[i].sender_list)))
+
+            if len(temp) > 1:
+                router_list[i].single_sender = 0
+                # router_list[i].reset = 2
+                router_list[i].initialize_receiver()
+
+
+    #지우고 다 받을 타임이 되면 flag확인하고서 다음 슬랏에 ACK보내기
     for i in range(setting.TOTAL_ROUTER_NUM):
         #DATA 받는 중
         #데이터를 받을 때만 데이터 상테를 표시하도록 조건 정해야함...
-        if router_list[i].ctrl_data['DATA'] is not 0 and \
-        supervisor.current_time_slot < router_list[i].time_to_end['DATA']:
-            router_list[i].state = 'DATA_RECEIVE'
-            logging.debug('data receiving')
-        #데이터 전송 완료된 경우 ACK 시간 세팅 (receiver쪽에서 세팅)
-        if router_list[i].ctrl_data['DATA'] == setting.DATA_LENGTH:
-            router_list[i].time_to_send['ACK'] = supervisor.current_time_slot + 1
-            # router_list[i].ctrl_data['DATA'] = 0 #reset
+        if router_list[i].single_sender == 1:
+            num = router_list[i].sender_list[0]
+            #데이터 전송 완료된 경우 ACK 시간 세팅 (receiver쪽에서 세팅)
+            if supervisor.current_time_slot == router_list[num].time_to_end['DATA']:
+                router_list[i].time_to_send['ACK'] = supervisor.current_time_slot + 1
+
+        elif router_list[i].single_sender > 1:
+            router_list[i].reset = 2
+
+        # if router_list[i].ctrl_data['DATA'] is not 0 and \
+        # supervisor.current_time_slot < router_list[i].time_to_end['DATA']:
+        #     router_list[i].state = 'DATA_RECEIVE'
+        #     logging.debug('data receiving')
+
 
     #======================================#
     #before time slot change (only divided time change)
@@ -165,10 +223,10 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
         #debug
         logging.info("i: "+str(i)+ "||state: " + str(router_list[i].state))
         logging.info("backoff R: "+str(router_list[i].backoff_data['R']))
-        logging.info("is it idle?: "+str(router_list[i].is_channal_idle(router_list)))
+        logging.info("is it idle?: "+str(router_list[i].is_channal_idle_noRTS(router_list)))
         #기다리고 있는 동안 R 1씩 줄이기
         if router_list[i].state == '' and router_list[i].backoff_data['R'] is not 0 and \
-        router_list[i].is_channal_idle(router_list) == True:
+        router_list[i].is_channal_idle_noRTS(router_list) == True:
             router_list[i].backoff_data['R'] = router_list[i].backoff_data['R'] -1
         #ACK 기다리고 있는 동안 time_out['ACK'] 1씩 줄이기
         if router_list[i].state == 'WAIT_ACK':
@@ -221,7 +279,7 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
 
         #draw range of routers
         if router_list[j].state == 'WAIT' or router_list[j].state == '' or \
-        or router_list[j].state == 'ACK_TIMEOUT':
+        router_list[j].state == 'ACK_TIMEOUT':
             circle = plt.Circle((router_list[j].x, router_list[j].y), radius=setting.ROUTER_RANGE, alpha=0.5, fc='white')
             plt.gca().add_patch(circle)
 
