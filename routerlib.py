@@ -23,7 +23,7 @@ class Line:
 
 class Setting:
     MAX_ROUTER_NUM = 1500
-    MAX_ROUTER_RANGE = 100
+    MAX_ROUTER_RANGE = 350 #100
     TOTAL_ROUTER_NUM = 5
     ROUTER_RANGE = 300
     K_LIMIT = 4
@@ -31,28 +31,6 @@ class Setting:
     DATA_LENGTH = 2
 
 class Router:
-    # def __init__(self):
-    #     #do it need to avoid router in same place?
-    #     #place router in random spot
-    #     self.x = random.randrange(1, 1000)
-    #     self.y = random.randrange(1, 1000)
-    #     self.near_router = []
-    #     self.state = '' #state info for display
-    #     #'RTS', 'CTS', 'DATA', 'ACK', 'WAIT'
-    #     self.ctrl_data = {'RTS': -1, 'CTS': -1, 'DATA': 0, 'ACK': -1}
-    #     #RTS = router number of DATA receiver
-    #     #CTS = router number of DATA sender
-    #     #DATA = datanumber to send (60~0)
-    #     #ACK = router number of DATA sender
-    #     self.backoff_data = {'R': 0, 'K': 0}
-    #     self.receiver = -1 #when this router is sender, save info
-    #     self.sender = -1 #when this router is receiver, save info
-    #     self.time_to_send = {'RTS': 0, 'CTS': -1, 'DATA': -1, 'ACK': -1} #number of timeslot to send message
-    #     self.time_out = {'CTS': 2, 'ACK': 2}
-    #     self.time_to_end = {'DATA': -1, 'NAV': -1}
-    #     self.reset = 0 #flag 1 for sender reset, 2 for receiver reset
-    #     self.sender_list = []
-
     def __init__(self, x=None, y=None):
         #place router in position x,y
         if x is None and y is None:
@@ -65,7 +43,7 @@ class Router:
         self.near_router = []
         self.state = '' #state info for display
         #'RTS', 'CTS', 'DATA', 'ACK', 'WAIT'
-        self.ctrl_data = {'RTS': -1, 'CTS': -1, 'DATA': 0, 'ACK': -1}
+        self.ctrl_data = {'RTS': -1, 'CTS': -1, 'DATA': 0, 'ACK': -1, 'noRTS': -1}
         #RTS = router number of DATA receiver
         #CTS = router number of DATA sender
         #DATA = datanumber to send (60~0)
@@ -79,6 +57,7 @@ class Router:
         self.NAV = 0
         self.reset = 0 #flag 1 for sender reset, 2 for receiver reset
         self.sender_list = []
+        self.single_sender = 0
 
     def add_near_router_info(self, router_list, router_num):
         setting = Setting()
@@ -106,7 +85,7 @@ class Router:
 
     def initialize_sender(self):
         self.state = ''
-        self.ctrl_data = {'RTS': -1, 'CTS': -1, 'DATA': 0, 'ACK': -1}
+        self.ctrl_data = {'RTS': -1, 'CTS': -1, 'DATA': 0, 'ACK': -1, 'noRTS': -1}
         self.backoff_data = {'R': 0, 'K': 0}
         self.sender = -1
         self.time_to_send = {'RTS': 0, 'CTS': -1, 'DATA': -1, 'ACK': -1}
@@ -117,7 +96,7 @@ class Router:
 
     def initialize_sender_without_RK(self):
         self.state = ''
-        self.ctrl_data = {'RTS': -1, 'CTS': -1, 'DATA': 0, 'ACK': -1}
+        self.ctrl_data = {'RTS': -1, 'CTS': -1, 'DATA': 0, 'ACK': -1, 'noRTS': -1}
         self.sender = -1
         self.time_to_send = {'RTS': 0, 'CTS': -1, 'DATA': -1, 'ACK': -1}
         self.time_out = {'CTS': 5, 'ACK': 5}
@@ -126,13 +105,14 @@ class Router:
 
     def initialize_receiver(self):
         self.state = ''
-        self.ctrl_data = {'RTS': -1, 'CTS': -1, 'DATA': 0, 'ACK': -1}
+        self.ctrl_data = {'RTS': -1, 'CTS': -1, 'DATA': 0, 'ACK': -1, 'noRTS': -1}
         self.receiver = -1
         self.time_to_send = {'RTS': 0, 'CTS': -1, 'DATA': -1, 'ACK': -1}
         self.time_out = {'CTS': 5, 'ACK': 5}
         self.time_to_end = {'DATA': -1, 'NAV': -1}
         self.reset = 0
         self.sender_list = []
+        self.single_sender = 0
 
     def is_channal_idle(self, router_list):
         near_router_sending = 0
@@ -141,6 +121,20 @@ class Router:
                 # print "num: " + str(num)
                 # print "router_list[num].state: " + str(router_list[num].state)
                 if router_list[num].state == 'RTS' or router_list[num].state == 'CTS' or router_list[num].state == 'ACK':
+                    near_router_sending = near_router_sending + 1
+        # print "near_router_sending: " + str(near_router_sending)
+        if near_router_sending == 0:
+            return True
+        else:
+            return False
+
+    def is_channal_idle_noRTS(self, router_list):
+        near_router_sending = 0
+        for j in range(len(self.near_router)):
+                num = self.near_router[j][0] #router number
+                # print "num: " + str(num)
+                # print "router_list[num].state: " + str(router_list[num].state)
+                if router_list[num].state == 'DATA_SEND' or router_list[num].state == 'ACK':
                     near_router_sending = near_router_sending + 1
         # print "near_router_sending: " + str(near_router_sending)
         if near_router_sending == 0:
