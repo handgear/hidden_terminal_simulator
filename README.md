@@ -29,6 +29,6 @@ so it can exceed 100%
 will fix this to more reliable value
  
 ## How save simulation result as png file
-uncomment this line (default: uncommented) / you need to make output folder before run  
-plt.savefig('./output/test%d.png' % timeslot)
+change class Setting  
+OUTPUT_PNG = True #True / False
  
