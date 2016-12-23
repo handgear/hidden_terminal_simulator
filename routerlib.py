@@ -24,11 +24,12 @@ class Line:
 class Setting:
     MAX_ROUTER_NUM = 1500
     MAX_ROUTER_RANGE = 350 #100
-    TOTAL_ROUTER_NUM = 5
-    ROUTER_RANGE = 300
+    TOTAL_ROUTER_NUM = 20
+    ROUTER_RANGE = 100
     K_LIMIT = 4
-    TOTAL_TIME_SLOT = 50
+    TOTAL_TIME_SLOT = 1000
     DATA_LENGTH = 10
+    OUTPUT_PNG = False #save result as png
 
 class Router:
     def __init__(self, x=None, y=None):

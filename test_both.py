@@ -321,7 +321,8 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
             plt.arrow(router_list[j].x, router_list[j].y, router_list[num].x -router_list[j].x, router_list[num].y - router_list[j].y, head_width=30, head_length=30, width=5, fc='m', ec='m')
 
     #END drawing section
-    plt.savefig('./output_noRTS/test%d.png' % timeslot) #uncomment to save as img
+    if(setting.OUTPUT_PNG):
+        plt.savefig('./output_noRTS/test%d.png' % timeslot) #uncomment to save as img
     # plt.show() #uncomment to show windows
     plt.gcf().clear()
 
@@ -657,7 +658,8 @@ for timeslot in range(setting.TOTAL_TIME_SLOT): #can be change current_time_slot
             plt.arrow(router_list[j].x, router_list[j].y, router_list[num].x -router_list[j].x, router_list[num].y - router_list[j].y, head_width=30, head_length=30, width=5, fc='m', ec='m')
 
     #END drawing section
-    plt.savefig('./output_RTS/test%d.png' % timeslot) #uncomment to save as img
+    if(setting.OUTPUT_PNG):
+        plt.savefig('./output_RTS/test%d.png' % timeslot) #uncomment to save as img
     # plt.show() #uncomment to show windows
     plt.gcf().clear()
 
